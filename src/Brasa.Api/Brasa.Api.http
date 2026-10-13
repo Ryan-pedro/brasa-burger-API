@@ -26,4 +26,46 @@ Accept: application/json
 POST {{Brasa.Api_HostAddress}}/api/v1/admin/auth/logout
 X-Brasa-Csrf: 1
 
+### Cardápio público (o que o Storefront mostra)
+GET {{Brasa.Api_HostAddress}}/api/v1/store/menu
+Accept: application/json
+
+### Painel: categorias (exige login com dono ou gerente)
+GET {{Brasa.Api_HostAddress}}/api/v1/admin/catalog/categories
+Accept: application/json
+
+### Painel: nova categoria
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/catalog/categories
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "name": "Lanches da Casa"
+}
+
+### Painel: produtos de uma categoria (troque o id)
+GET {{Brasa.Api_HostAddress}}/api/v1/admin/catalog/products?categoryId=00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+### Painel: novo produto (preço em centavos; troque o categoryId)
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/catalog/products
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "categoryId": "00000000-0000-0000-0000-000000000000",
+  "name": "X-Salada",
+  "description": "Pão, hambúrguer 150g, queijo, alface e tomate.",
+  "priceInCents": 2290
+}
+
+### Painel: marcar produto como indisponível (troque o id)
+PUT {{Brasa.Api_HostAddress}}/api/v1/admin/catalog/products/00000000-0000-0000-0000-000000000000/availability
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "isAvailable": false
+}
+
 ###

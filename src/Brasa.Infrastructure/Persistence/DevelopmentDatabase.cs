@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Brasa.Infrastructure.Persistence;
 
 /// <summary>
-/// Prepara o banco do ambiente de desenvolvimento: aplica as migrations e cria a loja
-/// e a equipe de demonstração. Pode rodar várias vezes: só cria o que ainda não existe.
+/// Prepara o banco do ambiente de desenvolvimento: aplica as migrations e cria a loja,
+/// o cardápio e a equipe de demonstração. Pode rodar várias vezes: só cria o que ainda não existe.
 /// Nunca é chamado fora de desenvolvimento: em produção as migrations são um passo do pipeline.
 /// </summary>
 public static class DevelopmentDatabase
@@ -28,6 +28,12 @@ public static class DevelopmentDatabase
         if (!await db.Stores.AnyAsync(cancellationToken))
         {
             db.Stores.Add(new Store("Brasa Burger", "America/Sao_Paulo"));
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        if (!await db.Categories.AnyAsync(cancellationToken))
+        {
+            DemoMenu.AddTo(db);
             await db.SaveChangesAsync(cancellationToken);
         }
 

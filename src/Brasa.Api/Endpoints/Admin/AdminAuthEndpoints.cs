@@ -65,6 +65,8 @@ public static class AdminAuthEndpoints
             })
             .WithName("AdminGetSession");
 
+        secured.MapAdminCatalogEndpoints();
+
         return api;
     }
 }

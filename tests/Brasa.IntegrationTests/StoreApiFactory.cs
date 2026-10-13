@@ -1,3 +1,4 @@
+using Brasa.Domain.Catalog;
 using Brasa.Domain.Identity;
 using Brasa.Domain.StoreSettings;
 using Brasa.Infrastructure.Identity;
@@ -34,6 +35,13 @@ public sealed class StoreApiFactory : WebApplicationFactory<Brasa.Api.AssemblyRe
     /// <summary>Usuário reservado para o teste de desativação com sessão aberta.</summary>
     public const string UserToDisable = "sera-desativado@teste.dev";
 
+    /// <summary>Cardápio inicial dos testes: uma categoria visível e uma inativa.</summary>
+    public const string VisibleCategory = "Lanches";
+    public const string HiddenCategory = "Escondida";
+    public const string AvailableProduct = "X-Teste";
+    public const string UnavailableProduct = "Esgotado";
+    public const string HiddenProduct = "Secreto";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // "Testing" evita a semeadura automática do ambiente de desenvolvimento.
@@ -51,6 +59,18 @@ public sealed class StoreApiFactory : WebApplicationFactory<Brasa.Api.AssemblyRe
         await db.Database.MigrateAsync();
 
         db.Stores.Add(new Store(StoreName, "America/Sao_Paulo"));
+
+        var visible = new Category(VisibleCategory, 0);
+        var hidden = new Category(HiddenCategory, 1);
+        hidden.Deactivate();
+        db.Categories.AddRange(visible, hidden);
+
+        var featured = new Product(visible.Id, AvailableProduct, "Pão, carne e queijo.", 19.90m, null, null, 0);
+        featured.SetFeatured(true);
+        var soldOut = new Product(visible.Id, UnavailableProduct, null, 12.50m, null, null, 1);
+        soldOut.SetAvailability(false);
+        db.Products.AddRange(featured, soldOut, new Product(hidden.Id, HiddenProduct, null, 5m, null, null, 0));
+
         await db.SaveChangesAsync();
 
         await CreateUserAsync(users, Owner, StaffRole.Owner);

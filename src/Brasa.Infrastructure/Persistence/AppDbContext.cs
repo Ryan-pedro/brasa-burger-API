@@ -1,4 +1,5 @@
 using Brasa.Application.Shared.Persistence;
+using Brasa.Domain.Catalog;
 using Brasa.Domain.StoreSettings;
 using Brasa.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -16,6 +17,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityUserContext<AppUser, Guid>(options), IAppDbContext
 {
     public DbSet<Store> Stores => Set<Store>();
+
+    public DbSet<Category> Categories => Set<Category>();
+
+    public DbSet<Product> Products => Set<Product>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

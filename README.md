@@ -4,7 +4,7 @@ Sistema de pedidos para uma hamburgueria: loja virtual, painel administrativo, p
 
 Este repositório tem a **API (.NET 10)**, o banco local e a documentação de arquitetura. O front-end (loja e painel, em Angular) fica em [brasa-burger-front-end](https://github.com/Ryan-pedro/brasa-burger-front-end).
 
-> **Estágio atual:** Fase 1 (identidade). A API já tem o perfil da loja, login, sessão em cookie, papéis e permissões.
+> **Estágio atual:** Fase 2 (cardápio). A API já tem o perfil da loja, login, sessão em cookie, papéis, permissões e o cardápio (categorias e produtos).
 > "Brasa Burger" é o nome da loja e o codinome do projeto. Os namespaces usam `Brasa`.
 
 ## Estrutura do repositório
@@ -59,6 +59,23 @@ Todos com a senha `brasa-dev-1234` (válida somente em desenvolvimento):
 | `cozinha@brasa.dev` | Cozinha |
 
 Os endpoints do painel ficam em `/api/v1/admin`. Requisições que alteram estado precisam do cabeçalho `X-Brasa-Csrf`. O arquivo `src/Brasa.Api/Brasa.Api.http` tem exemplos prontos.
+
+### Cardápio
+
+O cardápio público fica em `GET /api/v1/store/menu`: só categorias ativas e com produtos; produtos indisponíveis aparecem marcados (`isAvailable: false`). Preços trafegam em centavos (`priceInCents`, ADR-0012).
+
+No painel, sob `/api/v1/admin/catalog`:
+
+| Rota | Permissão |
+|---|---|
+| `GET /categories`, `GET /products?categoryId=` | `catalog.read` |
+| `POST /categories`, `PUT /categories/{id}` | `catalog.write` |
+| `POST /products`, `PUT /products/{id}` | `catalog.write` |
+| `PUT /products/{id}/availability` | `catalog.write` |
+
+Dono e gerente têm as duas permissões; a cozinha, nenhuma. Erros de validação voltam com `code: "validation_failed"` e as mensagens por campo em `errors`.
+
+Em desenvolvimento, a API cria o cardápio do protótipo (31 produtos em 6 categorias) na primeira vez que sobe.
 
 ### Com o front-end
 

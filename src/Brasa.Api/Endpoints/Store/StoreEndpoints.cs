@@ -1,4 +1,5 @@
 using Brasa.Api.Problems;
+using Brasa.Application.Catalog.Menu;
 using Brasa.Application.StoreSettings.GetStoreProfile;
 
 namespace Brasa.Api.Endpoints.Store;
@@ -18,6 +19,10 @@ public static class StoreEndpoints
                     : Results.Ok(profile);
             })
             .WithName("GetStoreProfile");
+
+        store.MapGet("/menu", async (GetMenuHandler handler, CancellationToken cancellationToken) =>
+                Results.Ok(await handler.HandleAsync(cancellationToken)))
+            .WithName("GetMenu");
 
         return api;
     }
