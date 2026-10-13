@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Brasa.Api/Brasa.Api.csproj" />
+    <Project Path="src/Brasa.Application/Brasa.Application.csproj" />
+    <Project Path="src/Brasa.Domain/Brasa.Domain.csproj" />
+    <Project Path="src/Brasa.Infrastructure/Brasa.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Brasa.ArchitectureTests/Brasa.ArchitectureTests.csproj" />
+    <Project Path="tests/Brasa.IntegrationTests/Brasa.IntegrationTests.csproj" />
+    <Project Path="tests/Brasa.UnitTests/Brasa.UnitTests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,29 @@
+@Brasa.Api_HostAddress = http://localhost:5143
+
+### Saúde da API
+GET {{Brasa.Api_HostAddress}}/api/v1/health
+Accept: application/json
+
+### Perfil da loja
+GET {{Brasa.Api_HostAddress}}/api/v1/store/profile
+Accept: application/json
+
+### Entrar no painel (o cabeçalho X-Brasa-Csrf é obrigatório em tudo que altera estado)
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/auth/login
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "email": "dono@brasa.dev",
+  "password": "brasa-dev-1234"
+}
+
+### Sessão atual (usa o cookie devolvido pelo login)
+GET {{Brasa.Api_HostAddress}}/api/v1/admin/session
+Accept: application/json
+
+### Sair
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/auth/logout
+X-Brasa-Csrf: 1
+
+###

@@ -1,0 +1,14 @@
+<Project>
+  <!-- Propriedades comuns a todos os projetos da solução. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Avisos do compilador quebram o build: nada de aviso acumulado. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Avisos de vulnerabilidade em pacotes continuam como aviso, para não travar o build de surpresa. -->
+    <WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+</Project>

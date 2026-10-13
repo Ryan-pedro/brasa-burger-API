@@ -1,0 +1,31 @@
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores e IDEs
+.idea/
+.vs/
+*.suo
+*.user
+*.swp
+
+# Segredos e configuração local — nunca versionar
+.env
+.env.*
+!.env.example
+*.pfx
+*.key
+
+# Node
+node_modules/
+
+# .NET
+bin/
+obj/
+TestResults/
+*.nupkg
+
+# Logs e temporários
+*.log
+tmp/
