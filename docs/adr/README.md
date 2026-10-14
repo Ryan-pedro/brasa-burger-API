@@ -41,6 +41,7 @@ Os registros marcados como **Proposto** ainda não foram validados por quem vai 
 | [0015](0015-estado-no-frontend-com-signals.md) | Estado no frontend com signals, sem biblioteca de estado global | Proposto |
 | [0016](0016-uma-unica-loja.md) | Uma única loja por instalação | Aceito |
 | [0017](0017-front-end-em-repositorio-proprio.md) | Front-end em repositório próprio | Aceito |
+| [0018](0018-imagens-em-disco-local.md) | Imagens do cardápio em disco local no MVP | Proposto |
 
 ## Modelo
 

@@ -11,6 +11,10 @@ public sealed class Product
     /// <summary>Maior preço aceito, em reais.</summary>
     public const decimal MaxPrice = 9999.99m;
 
+    public const int MaxOptionGroups = 10;
+
+    private readonly List<ProductOptionGroup> _optionGroups = [];
+
     // Usado pelo EF Core ao materializar a entidade.
     private Product()
     {
@@ -49,6 +53,11 @@ public sealed class Product
     public bool IsFeatured { get; private set; }
 
     public int SortOrder { get; private set; }
+
+    public IReadOnlyList<ProductOptionGroup> OptionGroups => _optionGroups;
+
+    public IReadOnlyList<Guid> OptionGroupIds =>
+        _optionGroups.OrderBy(link => link.SortOrder).Select(link => link.OptionGroupId).ToList();
 
     public void ChangeDetails(string name, string? description, decimal price, string? size, string? imageUrl)
     {
@@ -100,6 +109,36 @@ public sealed class Product
     public void SetAvailability(bool isAvailable) => IsAvailable = isAvailable;
 
     public void SetFeatured(bool isFeatured) => IsFeatured = isFeatured;
+
+    public void SetOptionGroups(IReadOnlyList<Guid> optionGroupIds)
+    {
+        ArgumentNullException.ThrowIfNull(optionGroupIds);
+
+        if (optionGroupIds.Count > MaxOptionGroups)
+        {
+            throw new ArgumentException($"O produto pode ter no máximo {MaxOptionGroups} grupos de opções.", nameof(optionGroupIds));
+        }
+
+        if (optionGroupIds.Contains(Guid.Empty) || optionGroupIds.Distinct().Count() != optionGroupIds.Count)
+        {
+            throw new ArgumentException("Grupos de opções inválidos ou repetidos.", nameof(optionGroupIds));
+        }
+
+        _optionGroups.RemoveAll(link => !optionGroupIds.Contains(link.OptionGroupId));
+
+        for (var index = 0; index < optionGroupIds.Count; index++)
+        {
+            var link = _optionGroups.FirstOrDefault(existing => existing.OptionGroupId == optionGroupIds[index]);
+            if (link is null)
+            {
+                _optionGroups.Add(new ProductOptionGroup(optionGroupIds[index], index));
+            }
+            else
+            {
+                link.SortOrder = index;
+            }
+        }
+    }
 
     private static string? Optional(string? value, int maxLength, string parameterName)
     {

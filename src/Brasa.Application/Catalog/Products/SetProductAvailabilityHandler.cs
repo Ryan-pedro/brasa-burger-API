@@ -1,3 +1,4 @@
+using Brasa.Application.Shared.Audit;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Application.Shared.Results;
 using Microsoft.EntityFrameworkCore;
@@ -5,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brasa.Application.Catalog.Products;
 
 /// <summary>A ação mais usada no dia a dia: "acabou o pão brioche".</summary>
-public sealed class SetProductAvailabilityHandler(IAppDbContext db)
+public sealed class SetProductAvailabilityHandler(IAppDbContext db, AuditTrail audit)
 {
     public async Task<Result<ProductResponse>> HandleAsync(Guid id, AvailabilityRequest request, CancellationToken cancellationToken)
     {
@@ -22,7 +23,11 @@ public sealed class SetProductAvailabilityHandler(IAppDbContext db)
             return ProductErrors.NotFound;
         }
 
-        product.SetAvailability(isAvailable);
+        if (product.IsAvailable != isAvailable)
+        {
+            product.SetAvailability(isAvailable);
+            audit.Record("product.availability_changed", product.Id, new { isAvailable });
+        }
         await db.SaveChangesAsync(cancellationToken);
 
         return ProductResponse.From(product);

@@ -1,6 +1,11 @@
+using Brasa.Api.Http;
 using Brasa.Api.Problems;
 using Brasa.Application.Catalog.Menu;
+using Brasa.Application.Catalog.Offers;
+using Brasa.Application.Ordering.Checkout;
+using Brasa.Application.Ordering.Tracking;
 using Brasa.Application.StoreSettings.GetStoreProfile;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Brasa.Api.Endpoints.Store;
 
@@ -20,9 +25,33 @@ public static class StoreEndpoints
             })
             .WithName("GetStoreProfile");
 
-        store.MapGet("/menu", async (GetMenuHandler handler, CancellationToken cancellationToken) =>
-                Results.Ok(await handler.HandleAsync(cancellationToken)))
+        store.MapGet("/menu", async (GetMenuHandler handler, HttpContext http, CancellationToken cancellationToken) =>
+                ETagged.Json(http, await handler.HandleAsync(cancellationToken)))
             .WithName("GetMenu");
+
+        store.MapGet("/offers", async (ListActiveOffersHandler handler, CancellationToken cancellationToken) =>
+                Results.Ok(await handler.HandleAsync(cancellationToken)))
+            .WithName("GetActiveOffers");
+
+        store.MapPost("/orders/quote", async (QuoteRequest request, QuoteHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(request, cancellationToken)).Match(value => Results.Ok(value)))
+            .RequireRateLimiting(RateLimits.Quotes)
+            .WithName("QuoteOrder");
+
+        store.MapPost("/orders", async (
+                [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+                CreateOrderRequest request,
+                CreateOrderHandler handler,
+                CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(idempotencyKey, request, cancellationToken)).Match(created => created.Replayed
+                    ? Results.Ok(created.Order)
+                    : Results.Created($"/api/v1/store/orders/{created.Order.TrackingToken}", created.Order)))
+            .RequireRateLimiting(RateLimits.Orders)
+            .WithName("CreateOrder");
+
+        store.MapGet("/orders/{token}", async (string token, GetOrderTrackingHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(token, cancellationToken)).Match(value => Results.Ok(value)))
+            .WithName("TrackOrder");
 
         return api;
     }

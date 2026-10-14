@@ -1,9 +1,14 @@
+using Brasa.Application.Catalog.Images;
 using Brasa.Application.Identity;
+using Brasa.Application.Ordering.Checkout;
+using Brasa.Application.Shared.Outbox;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Infrastructure.Identity;
 using Brasa.Infrastructure.Persistence;
+using Brasa.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Brasa.Infrastructure;
 
@@ -24,6 +29,15 @@ public static class DependencyInjection
                 .UseSnakeCaseNamingConvention());
 
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        services.AddScoped<DomainEventDispatcher>();
+        services.AddSingleton<OutboxSignal>();
+        services.AddScoped<IOutboxStore, OutboxStore>();
+        services.AddScoped<IOrderNumbers, OrderNumbers>();
+        services.AddSingleton<IDatabaseErrors, DatabaseErrors>();
+        services.TryAddSingleton(TimeProvider.System);
+
+        services.AddOptions<ImageStorageOptions>().BindConfiguration(ImageStorageOptions.Section);
+        services.AddSingleton<IImageStorage, LocalImageStorage>();
 
         services
             .AddIdentityCore<AppUser>(options =>

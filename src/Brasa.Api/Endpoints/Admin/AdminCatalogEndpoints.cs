@@ -1,12 +1,16 @@
 using Brasa.Api.Auth;
 using Brasa.Api.Problems;
 using Brasa.Application.Catalog.Categories;
+using Brasa.Application.Catalog.Images;
+using Brasa.Application.Catalog.Offers;
+using Brasa.Application.Catalog.OptionGroups;
 using Brasa.Application.Catalog.Products;
+using Microsoft.AspNetCore.Mvc;
 using Permissions = Brasa.Application.Identity.Permissions;
 
 namespace Brasa.Api.Endpoints.Admin;
 
-/// <summary>Cardápio no painel: categorias, produtos e disponibilidade.</summary>
+/// <summary>Cardápio no painel: categorias, produtos, grupos de opções, ofertas e imagens.</summary>
 internal static class AdminCatalogEndpoints
 {
     /// <param name="secured">Grupo do painel já com sessão obrigatória e revalidada.</param>
@@ -30,6 +34,11 @@ internal static class AdminCatalogEndpoints
             .RequirePermission(Permissions.CatalogWrite)
             .WithName("AdminUpdateCategory");
 
+        catalog.MapPut("/categories/{id:guid}/parent", async (Guid id, CategoryParentRequest request, MoveCategoryHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(id, request, cancellationToken)).Match(value => Results.Ok(value)))
+            .RequirePermission(Permissions.CatalogWrite)
+            .WithName("AdminMoveCategory");
+
         catalog.MapGet("/products", async (Guid? categoryId, ListProductsHandler handler, CancellationToken cancellationToken) =>
                 Results.Ok(await handler.HandleAsync(categoryId, cancellationToken)))
             .RequirePermission(Permissions.CatalogRead)
@@ -50,6 +59,54 @@ internal static class AdminCatalogEndpoints
                 (await handler.HandleAsync(id, request, cancellationToken)).Match(value => Results.Ok(value)))
             .RequirePermission(Permissions.CatalogWrite)
             .WithName("AdminSetProductAvailability");
+
+        catalog.MapGet("/option-groups", async (ListOptionGroupsHandler handler, CancellationToken cancellationToken) =>
+                Results.Ok(await handler.HandleAsync(cancellationToken)))
+            .RequirePermission(Permissions.CatalogRead)
+            .WithName("AdminListOptionGroups");
+
+        catalog.MapPost("/option-groups", async (OptionGroupRequest request, CreateOptionGroupHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(request, cancellationToken))
+                    .Match(group => Results.Created($"/api/v1/admin/catalog/option-groups/{group.Id}", group)))
+            .RequirePermission(Permissions.CatalogWrite)
+            .WithName("AdminCreateOptionGroup");
+
+        catalog.MapPut("/option-groups/{id:guid}", async (Guid id, OptionGroupRequest request, UpdateOptionGroupHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(id, request, cancellationToken)).Match(value => Results.Ok(value)))
+            .RequirePermission(Permissions.CatalogWrite)
+            .WithName("AdminUpdateOptionGroup");
+
+        catalog.MapPut("/option-groups/{id:guid}/options/{optionId:guid}/availability", async (Guid id, Guid optionId, OptionAvailabilityRequest request, SetOptionAvailabilityHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(id, optionId, request, cancellationToken)).Match(value => Results.Ok(value)))
+            .RequirePermission(Permissions.CatalogWrite)
+            .WithName("AdminSetOptionAvailability");
+
+        catalog.MapGet("/offers", async (ListOffersHandler handler, CancellationToken cancellationToken) =>
+                Results.Ok(await handler.HandleAsync(cancellationToken)))
+            .RequirePermission(Permissions.CatalogRead)
+            .WithName("AdminListOffers");
+
+        catalog.MapPost("/offers", async (OfferRequest request, CreateOfferHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(request, cancellationToken))
+                    .Match(offer => Results.Created($"/api/v1/admin/catalog/offers/{offer.Id}", offer)))
+            .RequirePermission(Permissions.OffersWrite)
+            .WithName("AdminCreateOffer");
+
+        catalog.MapPut("/offers/{id:guid}", async (Guid id, OfferRequest request, UpdateOfferHandler handler, CancellationToken cancellationToken) =>
+                (await handler.HandleAsync(id, request, cancellationToken)).Match(value => Results.Ok(value)))
+            .RequirePermission(Permissions.OffersWrite)
+            .WithName("AdminUpdateOffer");
+
+        catalog.MapPost("/images", async (IFormFile file, UploadImageHandler handler, CancellationToken cancellationToken) =>
+            {
+                await using var content = file.OpenReadStream();
+                return (await handler.HandleAsync(content, file.Length, cancellationToken))
+                    .Match(image => Results.Created(image.Url, image));
+            })
+            .RequirePermission(Permissions.CatalogWrite)
+            .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(UploadImageHandler.MaxBytes + 64 * 1024))
+            .WithName("AdminUploadImage");
 
         return secured;
     }

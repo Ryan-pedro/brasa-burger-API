@@ -19,6 +19,16 @@ public sealed class CreateProductHandler(IAppDbContext db)
         if (!await db.Categories.AnyAsync(c => c.Id == valid.CategoryId, cancellationToken))
         {
             errors.Add("categoryId", "Categoria não encontrada.");
+        }
+
+        var optionGroupIds = request.OptionGroupIds ?? [];
+        if (!await db.AllExistAsync(optionGroupIds, cancellationToken))
+        {
+            errors.Add("optionGroupIds", "Grupo de opções não encontrado.");
+        }
+
+        if (errors.Any)
+        {
             return errors.ToError();
         }
 
@@ -38,6 +48,8 @@ public sealed class CreateProductHandler(IAppDbContext db)
         {
             product.SetFeatured(true);
         }
+
+        product.SetOptionGroups(optionGroupIds);
 
         db.Products.Add(product);
         await db.SaveChangesAsync(cancellationToken);

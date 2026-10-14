@@ -1,7 +1,14 @@
+using Brasa.Application.Shared.Audit;
+using Brasa.Application.Shared.Idempotency;
+using Brasa.Application.Shared.Outbox;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Domain.Catalog;
+using Brasa.Domain.Kitchen;
+using Brasa.Domain.Ordering;
+using Brasa.Domain.Payments;
 using Brasa.Domain.StoreSettings;
 using Brasa.Infrastructure.Identity;
+using Brasa.Infrastructure.Persistence.Configurations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +20,7 @@ namespace Brasa.Infrastructure.Persistence;
 /// do ASP.NET Core Identity. Não usa as tabelas de papéis do Identity: o papel de cada
 /// pessoa fica no próprio usuário (<see cref="AppUser.Role"/>).
 /// </remarks>
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options, DomainEventDispatcher dispatcher, OutboxSignal outboxSignal)
     : IdentityUserContext<AppUser, Guid>(options), IAppDbContext
 {
     public DbSet<Store> Stores => Set<Store>();
@@ -21,6 +28,37 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Category> Categories => Set<Category>();
 
     public DbSet<Product> Products => Set<Product>();
+
+    public DbSet<OptionGroup> OptionGroups => Set<OptionGroup>();
+
+    public DbSet<Offer> Offers => Set<Offer>();
+
+    public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<KitchenTicket> KitchenTickets => Set<KitchenTicket>();
+
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        await dispatcher.DispatchAsync(this, cancellationToken);
+
+        var queuesNotice = ChangeTracker.Entries<OutboxMessage>().Any(entry => entry.State == EntityState.Added);
+        var saved = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+        if (queuesNotice)
+        {
+            outboxSignal.Notify();
+        }
+
+        return saved;
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +75,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("user_claims", "identity");
         modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("user_logins", "identity");
         modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("user_tokens", "identity");
+
+        modelBuilder.HasSequence<int>(OrderConfiguration.NumberSequence, "ordering");
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }

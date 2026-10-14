@@ -15,5 +15,7 @@ internal sealed class StoreConfiguration : IEntityTypeConfiguration<Store>
 
         builder.Property(store => store.Name).HasMaxLength(Store.NameMaxLength).IsRequired();
         builder.Property(store => store.TimeZoneId).HasMaxLength(64).IsRequired();
+        builder.Property(store => store.DeliveryFee).HasPrecision(10, 2);
+        builder.Property(store => store.MinimumOrder).HasPrecision(10, 2);
     }
 }

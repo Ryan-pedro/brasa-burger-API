@@ -30,6 +30,8 @@ public sealed class Category
     /// <summary>Categoria inativa some do cardápio público, com todos os seus produtos.</summary>
     public bool IsActive { get; private set; }
 
+    public Guid? ParentId { get; private set; }
+
     public void Rename(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -54,6 +56,16 @@ public sealed class Category
     {
         ArgumentOutOfRangeException.ThrowIfNegative(sortOrder);
         SortOrder = sortOrder;
+    }
+
+    public void MoveUnder(Guid? parentId)
+    {
+        if (parentId == Guid.Empty || parentId == Id)
+        {
+            throw new ArgumentException("Categoria pai inválida.", nameof(parentId));
+        }
+
+        ParentId = parentId;
     }
 
     public void Activate() => IsActive = true;

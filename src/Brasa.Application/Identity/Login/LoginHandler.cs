@@ -1,4 +1,6 @@
 using Brasa.Application.Identity.Session;
+using Brasa.Application.Shared.Audit;
+using Brasa.Application.Shared.Persistence;
 
 namespace Brasa.Application.Identity.Login;
 
@@ -18,7 +20,7 @@ public sealed record LoginResult(SessionResponse? Session, LoginFailure? Failure
     public static LoginResult Failed(LoginFailure failure) => new(null, failure);
 }
 
-public sealed class LoginHandler(IUserAccounts accounts)
+public sealed class LoginHandler(IUserAccounts accounts, IAppDbContext db, AuditTrail audit)
 {
     public async Task<LoginResult> HandleAsync(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -27,23 +29,28 @@ public sealed class LoginHandler(IUserAccounts accounts)
             return LoginResult.Failed(LoginFailure.InvalidCredentials);
         }
 
-        var check = await accounts.CheckPasswordAsync(request.Email.Trim(), request.Password, cancellationToken);
+        var email = request.Email.Trim();
+        var check = await accounts.CheckPasswordAsync(email, request.Password, cancellationToken);
 
-        if (check.Outcome == PasswordCheckOutcome.LockedOut)
+        var result = check switch
         {
-            return LoginResult.Failed(LoginFailure.AccountLocked);
+            { Outcome: PasswordCheckOutcome.LockedOut } => LoginResult.Failed(LoginFailure.AccountLocked),
+            { Outcome: PasswordCheckOutcome.Success, User: { IsActive: true } user } => LoginResult.Succeeded(SessionResponse.Create(user)),
+            { Outcome: PasswordCheckOutcome.Success, User: not null } => LoginResult.Failed(LoginFailure.AccountDisabled),
+            _ => LoginResult.Failed(LoginFailure.InvalidCredentials),
+        };
+
+        if (result.Session is { } session)
+        {
+            audit.Record("auth.login_succeeded", session.User.Id, userId: session.User.Id);
+        }
+        else
+        {
+            audit.Record("auth.login_failed", check.User?.Id, new { email, reason = result.Failure.ToString() });
         }
 
-        if (check.Outcome != PasswordCheckOutcome.Success || check.User is null)
-        {
-            return LoginResult.Failed(LoginFailure.InvalidCredentials);
-        }
+        await db.SaveChangesAsync(cancellationToken);
 
-        if (!check.User.IsActive)
-        {
-            return LoginResult.Failed(LoginFailure.AccountDisabled);
-        }
-
-        return LoginResult.Succeeded(SessionResponse.Create(check.User));
+        return result;
     }
 }

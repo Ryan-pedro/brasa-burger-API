@@ -47,22 +47,28 @@ tests/
 
 - Um handler por caso de uso (`XxxHandler`, método `HandleAsync`), registrado como `Scoped` em `AddApplication()`.
 - Acesso a dados por `IAppDbContext`. Leitura com `AsNoTracking()`.
-- Falha esperada volta como `Result<T>` com `Error` (`Validation`, `NotFound`, `Conflict`) e `code` estável em snake_case (`category_name_taken`, `product_not_found`). Exceção é para erro inesperado.
+- Falha esperada volta como `Result<T>` com `Error` (`Validation` 400, `NotFound` 404, `Conflict` 409, `Rule` 422) e `code` estável em snake_case (`category_name_taken`, `cart_changed`, `below_minimum_order`). Dados extras para o front vão em `Error.Extensions` (ex.: `quote` no `cart_changed`). Exceção é para erro inesperado.
 - Validação de entrada com `FieldErrors`, chaves no nome do campo do JSON (camelCase), mensagens em português. Valide antes de chamar o domínio.
 - Contratos (`XxxRequest`, `XxxResponse`) são `record`. Nos contratos, dinheiro trafega em centavos (`long PriceInCents`) e é convertido com `Money`.
-- Usuário corrente via `CurrentUser`, preenchido pelo servidor.
+- Usuário corrente via `CurrentUser`, preenchido pelo servidor. Relógio sempre por `TimeProvider`, nunca `DateTime.Now`.
+- Reação entre módulos por evento de domínio (`AggregateRoot.Raise` + `IDomainEventHandler<T>`), despachado em `SaveChangesAsync`, na mesma transação (ADR-0007). Ex.: pedido confirmado → comanda; preparo → estado do pedido.
+- Efeito fora do banco (aviso SignalR) entra no outbox com `db.Queue(...)` e é entregue por `DispatchOutboxJob`. O aviso só leva tipo e id; o cliente reconsulta por HTTP (ADR-0008).
+- Ação relevante (preço, disponibilidade, login, cancelamento, configuração da loja) é registrada com `AuditTrail.Record`.
+- Tarefas periódicas implementam `IJob` e são registradas em `Program.cs` com `AddJob<T>`.
 
 ### Infrastructure
 
-- Uma `IEntityTypeConfiguration<T>` por entidade, schema por módulo (`store`, `identity`, `catalog`), tabelas em snake_case.
+- Uma `IEntityTypeConfiguration<T>` por entidade, schema por módulo (`store`, `identity`, `catalog`, `ordering`, `payments`, `kitchen`, `shared`, `audit`), tabelas em snake_case.
+- Agregado editado por pessoas ou com transição de estado concorrente tem versão de linha (`xmin`); conflito vira 409 `version_conflict`.
 - `numeric(10,2)` para dinheiro; índices e chaves únicas declarados na configuração.
 - Migrations geradas com `dotnet ef migrations add <Nome>` (comando no README). Nunca edite migration já aplicada; crie outra.
 - `DevelopmentDatabase` só roda em Development e é idempotente.
 
 ### Api
 
-- Rotas sob `/api/v1`. Superfície pública em `/store`, painel em `/admin`.
-- O grupo `/admin` tem `CsrfHeaderFilter`; rotas autenticadas usam `RequireAuthorization("admin")` + `AdminSessionFilter`, que relê o usuário no banco a cada requisição.
+- Rotas sob `/api/v1`. Superfície pública em `/store`, painel em `/admin`, cozinha em `/kitchen`, hubs SignalR em `/hubs/kitchen` e `/hubs/ops`.
+- Os grupos `/admin` e `/kitchen` têm `CsrfHeaderFilter`; rotas autenticadas usam `RequireStaffSession()` (cookie `admin` + `AdminSessionFilter`, que relê o usuário no banco a cada requisição).
+- Rotas públicas que gravam têm limite de taxa (`RateLimits`). Criar pedido exige o cabeçalho `Idempotency-Key`.
 - Autorização por **permissão, nunca por papel**: `.RequirePermission(Permissions.CatalogWrite)`. Papéis viram permissões só em `Permissions.For(role)`.
 - Erros sempre por `ApiProblems` (`Create`, `From`, `Match`), com `code` e, em validação, `errors` por campo. Não exponha mensagem de exceção.
 - Cookie de sessão HttpOnly, SameSite=Lax, `__Host-` fora de Development/Testing. Não enfraqueça essas regras.

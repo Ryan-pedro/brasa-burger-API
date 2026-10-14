@@ -56,4 +56,26 @@ public class ProductTests
         Assert.False(product.IsAvailable);
         Assert.True(product.IsFeatured);
     }
+
+    [Fact]
+    public void Grupos_de_opcoes_seguem_a_ordem_informada()
+    {
+        var product = new Product(CategoryId, "X-Bacon", null, 24.90m, null, null, 0);
+        var extras = Guid.CreateVersion7();
+        var removal = Guid.CreateVersion7();
+
+        product.SetOptionGroups([extras, removal]);
+        product.SetOptionGroups([removal, extras]);
+
+        Assert.Equal([removal, extras], product.OptionGroupIds);
+    }
+
+    [Fact]
+    public void Grupo_de_opcoes_repetido_e_recusado()
+    {
+        var product = new Product(CategoryId, "X-Bacon", null, 24.90m, null, null, 0);
+        var group = Guid.CreateVersion7();
+
+        Assert.Throws<ArgumentException>(() => product.SetOptionGroups([group, group]));
+    }
 }

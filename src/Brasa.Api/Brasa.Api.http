@@ -68,4 +68,108 @@ X-Brasa-Csrf: 1
   "isAvailable": false
 }
 
+### Painel: grupo de opções (Addon, Choice ou Removal; preço em centavos)
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/catalog/option-groups
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "name": "Adicionais",
+  "kind": "Addon",
+  "minSelections": 0,
+  "maxSelections": 3,
+  "options": [
+    { "name": "Bacon", "priceDeltaInCents": 500 },
+    { "name": "Queijo", "priceDeltaInCents": 300 }
+  ]
+}
+
+### Painel: oferta de desconto a partir de um valor
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/catalog/offers
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "label": "R$ 5 OFF no app",
+  "kind": "OrderAmount",
+  "minimumSubtotalInCents": 3000,
+  "discountInCents": 500
+}
+
+### Painel: configurações da loja (exige dono ou gerente)
+PUT {{Brasa.Api_HostAddress}}/api/v1/admin/store/settings
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "deliveryFeeInCents": 690,
+  "minimumOrderInCents": 2000,
+  "manualAcceptance": false
+}
+
+### Painel: fechar a loja
+PUT {{Brasa.Api_HostAddress}}/api/v1/admin/store/status
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "isOpen": false
+}
+
+### Loja: cotação do carrinho (troque o productId e os optionIds)
+POST {{Brasa.Api_HostAddress}}/api/v1/store/orders/quote
+Content-Type: application/json
+
+{
+  "type": "Pickup",
+  "items": [
+    { "productId": "00000000-0000-0000-0000-000000000000", "quantity": 1, "optionIds": [], "notes": "sem gelo" }
+  ]
+}
+
+### Loja: criar pedido (expectedTotalInCents vem da cotação)
+POST {{Brasa.Api_HostAddress}}/api/v1/store/orders
+Content-Type: application/json
+Idempotency-Key: troque-a-cada-checkout
+
+{
+  "type": "Pickup",
+  "items": [
+    { "productId": "00000000-0000-0000-0000-000000000000", "quantity": 1, "optionIds": [] }
+  ],
+  "customer": { "name": "Ana" },
+  "paymentMethod": "Pix",
+  "expectedTotalInCents": 2490
+}
+
+### Loja: acompanhar o pedido (token devolvido na criação)
+GET {{Brasa.Api_HostAddress}}/api/v1/store/orders/troque-pelo-token
+Accept: application/json
+
+### Painel: pedidos confirmados
+GET {{Brasa.Api_HostAddress}}/api/v1/admin/orders?status=Confirmed&limit=20
+Accept: application/json
+
+### Painel: cancelar pedido (troque o id)
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/orders/00000000-0000-0000-0000-000000000000/cancel
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "reason": "Cliente desistiu"
+}
+
+### Cozinha: quadro (entre com cozinha@brasa.dev)
+GET {{Brasa.Api_HostAddress}}/api/v1/kitchen/tickets
+Accept: application/json
+
+### Cozinha: avançar o preparo (troque o id; from é a etapa atual)
+POST {{Brasa.Api_HostAddress}}/api/v1/kitchen/tickets/00000000-0000-0000-0000-000000000000/advance
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "from": "Queued"
+}
+
 ###

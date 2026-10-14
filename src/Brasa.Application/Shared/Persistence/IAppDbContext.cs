@@ -1,4 +1,10 @@
+using Brasa.Application.Shared.Audit;
+using Brasa.Application.Shared.Idempotency;
+using Brasa.Application.Shared.Outbox;
 using Brasa.Domain.Catalog;
+using Brasa.Domain.Kitchen;
+using Brasa.Domain.Ordering;
+using Brasa.Domain.Payments;
 using Brasa.Domain.StoreSettings;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +20,22 @@ public interface IAppDbContext
     DbSet<Category> Categories { get; }
 
     DbSet<Product> Products { get; }
+
+    DbSet<OptionGroup> OptionGroups { get; }
+
+    DbSet<Offer> Offers { get; }
+
+    DbSet<Order> Orders { get; }
+
+    DbSet<Payment> Payments { get; }
+
+    DbSet<KitchenTicket> KitchenTickets { get; }
+
+    DbSet<OutboxMessage> OutboxMessages { get; }
+
+    DbSet<AuditEntry> AuditEntries { get; }
+
+    DbSet<IdempotencyRecord> IdempotencyRecords { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

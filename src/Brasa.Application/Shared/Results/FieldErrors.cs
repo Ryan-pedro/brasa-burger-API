@@ -18,6 +18,10 @@ public sealed class FieldErrors
         messages.Add(message);
     }
 
-    public Error ToError() =>
-        Error.Validation(_errors.ToDictionary(pair => pair.Key, pair => pair.Value.ToArray(), StringComparer.Ordinal));
+    public Error ToError() => Error.Validation(Snapshot());
+
+    public Error ToConflict(string code, string message) => new(ErrorKind.Conflict, code, message, Snapshot());
+
+    private Dictionary<string, string[]> Snapshot() =>
+        _errors.ToDictionary(pair => pair.Key, pair => pair.Value.ToArray(), StringComparer.Ordinal);
 }

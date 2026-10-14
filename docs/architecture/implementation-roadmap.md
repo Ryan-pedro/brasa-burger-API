@@ -11,6 +11,15 @@
 >
 > O restante das fases e critérios de aceite continua valendo, lido como "a loja" em vez de "cada loja".
 
+> **Andamento em 2026-10-14.** As fases 2, 3 e 4 estão implementadas na API, com testes. Decisões tomadas:
+>
+> - **DP-06:** aceite configurável pela loja, **automático por padrão**. No aceite manual, o pedido sem resposta no prazo configurado é recusado sozinho.
+> - **DP-11:** entrega, retirada e mesa, como no protótipo: taxa de entrega fixa e número da mesa digitado.
+> - Imagens em disco local no MVP ([ADR-0018](../adr/0018-imagens-em-disco-local.md)), sem recodificação.
+> - Ofertas combinatórias (Terça do Hambúrguer) continuam fora do MVP.
+>
+> Pendente da fase 4 no front-end: a aplicação Kitchen Display e a remoção da rota `/cozinha/comanda` do Storefront.
+
 Este documento ordena a implementação em fases, com critérios de aceite, riscos e o registro das decisões pendentes. Ele não contém estimativas de prazo: o tamanho de cada fase é relativo (P, M, G), porque a capacidade de quem vai implementar não é conhecida aqui.
 
 ## 1. Princípios de sequenciamento

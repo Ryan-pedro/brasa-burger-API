@@ -26,6 +26,9 @@ obj/
 TestResults/
 *.nupkg
 
+# Imagens enviadas pelo painel em desenvolvimento
+storage/
+
 # Logs e temporários
 *.log
 tmp/

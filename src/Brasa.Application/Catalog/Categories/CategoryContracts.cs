@@ -6,10 +6,12 @@ namespace Brasa.Application.Catalog.Categories;
 /// <summary>Corpo de criação e de edição. Campos nulos na edição mantêm o valor atual.</summary>
 public sealed record CategoryRequest(string? Name, int? SortOrder, bool? IsActive);
 
-public sealed record CategoryResponse(Guid Id, string Name, string Slug, int SortOrder, bool IsActive, int ProductCount)
+public sealed record CategoryParentRequest(Guid? ParentId);
+
+public sealed record CategoryResponse(Guid Id, string Name, string Slug, int SortOrder, bool IsActive, int ProductCount, Guid? ParentId)
 {
     public static CategoryResponse From(Category category, int productCount) =>
-        new(category.Id, category.Name, category.Slug, category.SortOrder, category.IsActive, productCount);
+        new(category.Id, category.Name, category.Slug, category.SortOrder, category.IsActive, productCount, category.ParentId);
 }
 
 internal static class CategoryRules

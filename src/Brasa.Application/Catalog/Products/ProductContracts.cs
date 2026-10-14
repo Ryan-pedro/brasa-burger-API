@@ -1,6 +1,8 @@
 using Brasa.Application.Shared;
+using Brasa.Application.Shared.Persistence;
 using Brasa.Application.Shared.Results;
 using Brasa.Domain.Catalog;
+using Microsoft.EntityFrameworkCore;
 
 namespace Brasa.Application.Catalog.Products;
 
@@ -17,7 +19,8 @@ public sealed record ProductRequest(
     string? ImageUrl,
     bool? IsAvailable,
     bool? IsFeatured,
-    int? SortOrder);
+    int? SortOrder,
+    IReadOnlyList<Guid>? OptionGroupIds = null);
 
 public sealed record AvailabilityRequest(bool? IsAvailable);
 
@@ -31,7 +34,8 @@ public sealed record ProductResponse(
     string? ImageUrl,
     bool IsAvailable,
     bool IsFeatured,
-    int SortOrder)
+    int SortOrder,
+    IReadOnlyList<Guid> OptionGroupIds)
 {
     public static ProductResponse From(Product product) =>
         new(
@@ -44,7 +48,8 @@ public sealed record ProductResponse(
             product.ImageUrl,
             product.IsAvailable,
             product.IsFeatured,
-            product.SortOrder);
+            product.SortOrder,
+            product.OptionGroupIds);
 }
 
 public static class ProductErrors
@@ -111,6 +116,12 @@ internal static class ProductRules
             errors.Add("sortOrder", "A posição não pode ser negativa.");
         }
 
+        if (request.OptionGroupIds is { } groupIds
+            && (groupIds.Count > Product.MaxOptionGroups || groupIds.Contains(Guid.Empty) || groupIds.Distinct().Count() != groupIds.Count))
+        {
+            errors.Add("optionGroupIds", $"Escolha até {Product.MaxOptionGroups} grupos, sem repetir.");
+        }
+
         if (errors.Any)
         {
             return null;
@@ -124,4 +135,10 @@ internal static class ProductRules
             request.Size,
             request.ImageUrl);
     }
+}
+
+internal static class ProductOptionGroupRules
+{
+    public static async Task<bool> AllExistAsync(this IAppDbContext db, IReadOnlyList<Guid> optionGroupIds, CancellationToken cancellationToken) =>
+        await db.OptionGroups.CountAsync(group => optionGroupIds.Contains(group.Id), cancellationToken) == optionGroupIds.Count;
 }

@@ -52,9 +52,7 @@ public static class AdminAuthEndpoints
             .AllowAnonymous();
 
         // Daqui para baixo: sessão obrigatória, revalidada no banco a cada requisição.
-        var secured = admin.MapGroup(string.Empty)
-            .RequireAuthorization(AdminAuth.Scheme)
-            .AddEndpointFilter<AdminSessionFilter>();
+        var secured = admin.MapGroup(string.Empty).RequireStaffSession();
 
         secured.MapGet("/session", async (GetSessionHandler handler, CancellationToken cancellationToken) =>
             {
@@ -66,6 +64,8 @@ public static class AdminAuthEndpoints
             .WithName("AdminGetSession");
 
         secured.MapAdminCatalogEndpoints();
+        secured.MapAdminStoreEndpoints();
+        secured.MapAdminOrderEndpoints();
 
         return api;
     }

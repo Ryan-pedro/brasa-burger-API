@@ -27,13 +27,21 @@ public static class DevelopmentDatabase
 
         if (!await db.Stores.AnyAsync(cancellationToken))
         {
-            db.Stores.Add(new Store("Brasa Burger", "America/Sao_Paulo"));
+            var store = new Store("Brasa Burger", "America/Sao_Paulo");
+            store.SetDeliveryFee(6.9m);
+            db.Stores.Add(store);
             await db.SaveChangesAsync(cancellationToken);
         }
 
         if (!await db.Categories.AnyAsync(cancellationToken))
         {
             DemoMenu.AddTo(db);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        if (!await db.OptionGroups.AnyAsync(cancellationToken))
+        {
+            await DemoOptions.AddToAsync(db, DateTimeOffset.UtcNow, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
 

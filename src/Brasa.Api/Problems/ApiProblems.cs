@@ -22,6 +22,7 @@ internal static class ApiProblems
             ErrorKind.Validation => StatusCodes.Status400BadRequest,
             ErrorKind.NotFound => StatusCodes.Status404NotFound,
             ErrorKind.Conflict => StatusCodes.Status409Conflict,
+            ErrorKind.Rule => StatusCodes.Status422UnprocessableEntity,
             _ => StatusCodes.Status400BadRequest,
         };
 
@@ -30,6 +31,11 @@ internal static class ApiProblems
         {
             // Mensagens por campo, com o nome do campo como está no JSON: { "priceInCents": ["..."] }
             extensions["errors"] = error.Fields;
+        }
+
+        foreach (var (key, value) in error.Extensions ?? new Dictionary<string, object?>())
+        {
+            extensions[key] = value;
         }
 
         return TypedResults.Problem(statusCode: statusCode, title: error.Message, extensions: extensions);
