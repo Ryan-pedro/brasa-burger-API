@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Brasa.Application.Shared.Outbox;
+using Brasa.Application.Shared.Realtime;
 
 namespace Brasa.IntegrationTests;
 

@@ -2,15 +2,6 @@ using Brasa.Domain.Catalog;
 
 namespace Brasa.Domain.Ordering;
 
-public sealed record AppliedDiscount(Guid OfferId, string Label, decimal Amount);
-
-public sealed record PriceBreakdown(decimal Subtotal, AppliedDiscount? Discount, decimal DeliveryFee)
-{
-    public decimal DiscountAmount => Discount?.Amount ?? 0m;
-
-    public decimal Total => Math.Max(0m, Subtotal - DiscountAmount + DeliveryFee);
-}
-
 public static class CartPricing
 {
     public static PriceBreakdown Calculate(IReadOnlyList<CartLine> lines, IEnumerable<Offer> offers, decimal deliveryFee, DateTimeOffset moment)

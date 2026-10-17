@@ -9,6 +9,6 @@ public sealed class GetTicketHandler(IAppDbContext db)
     public async Task<Result<TicketResponse>> HandleAsync(Guid id, CancellationToken cancellationToken)
     {
         var ticket = await db.KitchenTickets.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
-        return ticket is null ? TicketErrors.NotFound : TicketResponse.From(ticket);
+        return ticket is null ? TicketErrors.NotFound : await db.ToResponseAsync(ticket, cancellationToken);
     }
 }

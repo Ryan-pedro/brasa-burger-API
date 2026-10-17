@@ -26,7 +26,7 @@ public static class StoreEndpoints
             .WithName("GetStoreProfile");
 
         store.MapGet("/menu", async (GetMenuHandler handler, HttpContext http, CancellationToken cancellationToken) =>
-                ETagged.Json(http, await handler.HandleAsync(cancellationToken)))
+                JsonWithETag.Create(http, await handler.HandleAsync(cancellationToken)))
             .WithName("GetMenu");
 
         store.MapGet("/offers", async (ListActiveOffersHandler handler, CancellationToken cancellationToken) =>

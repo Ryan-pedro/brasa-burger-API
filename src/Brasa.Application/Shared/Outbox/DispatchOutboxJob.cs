@@ -1,4 +1,5 @@
 using Brasa.Application.Shared.Jobs;
+using Brasa.Application.Shared.Realtime;
 
 namespace Brasa.Application.Shared.Outbox;
 

@@ -1,15 +1,9 @@
 using Brasa.Application.Shared.Persistence;
-using Brasa.Application.Shared.Results;
 using Brasa.Domain.Ordering;
 using Brasa.Domain.StoreSettings;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brasa.Application.StoreSettings.Shared;
-
-public static class StoreErrors
-{
-    public static readonly Error NotConfigured = Error.NotFound("store_not_configured", "A loja ainda não foi configurada.");
-}
 
 public static class StoreQueries
 {

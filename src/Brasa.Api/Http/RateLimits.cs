@@ -1,22 +1,13 @@
 using System.Threading.RateLimiting;
 using Brasa.Api.Problems;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Brasa.Api.Http;
-
-internal sealed class RateLimitSettings
-{
-    public const string Section = "RateLimits";
-
-    public int OrdersPerMinute { get; set; } = 10;
-
-    public int QuotesPerMinute { get; set; } = 60;
-}
 
 internal static class RateLimits
 {
     public const string Orders = "orders";
     public const string Quotes = "quotes";
+    public const string AgentCredentials = "agent-credentials";
 
     public static IServiceCollection AddPublicRateLimits(this IServiceCollection services, IConfiguration configuration)
     {
@@ -26,6 +17,7 @@ internal static class RateLimits
         {
             options.AddPolicy(Orders, http => PerClient(http, settings.OrdersPerMinute));
             options.AddPolicy(Quotes, http => PerClient(http, settings.QuotesPerMinute));
+            options.AddPolicy(AgentCredentials, http => PerClient(http, settings.AgentCredentialsPerMinute));
             options.OnRejected = (context, _) =>
                 new ValueTask(ApiProblems
                     .Create(StatusCodes.Status429TooManyRequests, "Muitas tentativas. Aguarde um minuto.", "rate_limited")

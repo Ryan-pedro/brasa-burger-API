@@ -52,21 +52,23 @@ tests/
 - Contratos (`XxxRequest`, `XxxResponse`) são `record`. Nos contratos, dinheiro trafega em centavos (`long PriceInCents`) e é convertido com `Money`.
 - Usuário corrente via `CurrentUser`, preenchido pelo servidor. Relógio sempre por `TimeProvider`, nunca `DateTime.Now`.
 - Reação entre módulos por evento de domínio (`AggregateRoot.Raise` + `IDomainEventHandler<T>`), despachado em `SaveChangesAsync`, na mesma transação (ADR-0007). Ex.: pedido confirmado → comanda; preparo → estado do pedido.
-- Efeito fora do banco (aviso SignalR) entra no outbox com `db.Queue(...)` e é entregue por `DispatchOutboxJob`. O aviso só leva tipo e id; o cliente reconsulta por HTTP (ADR-0008).
+- Efeito fora do banco (aviso SignalR) entra no outbox com `db.QueueRealtimeNotice(...)` e é entregue por `DispatchOutboxJob`. O aviso só leva tipo e id; o cliente reconsulta por HTTP (ADR-0008).
 - Ação relevante (preço, disponibilidade, login, cancelamento, configuração da loja) é registrada com `AuditTrail.Record`.
 - Tarefas periódicas implementam `IJob` e são registradas em `Program.cs` com `AddJob<T>`.
 
 ### Infrastructure
 
-- Uma `IEntityTypeConfiguration<T>` por entidade, schema por módulo (`store`, `identity`, `catalog`, `ordering`, `payments`, `kitchen`, `shared`, `audit`), tabelas em snake_case.
+- Uma `IEntityTypeConfiguration<T>` por entidade, schema por módulo (`store`, `identity`, `catalog`, `ordering`, `payments`, `kitchen`, `printing`, `shared`, `audit`), tabelas em snake_case.
 - Agregado editado por pessoas ou com transição de estado concorrente tem versão de linha (`xmin`); conflito vira 409 `version_conflict`.
 - `numeric(10,2)` para dinheiro; índices e chaves únicas declarados na configuração.
+- Consulta com SQL próprio (`FromSql`) de entidade com versão de linha precisa selecionar `xmin` junto (`SELECT j.*, j.xmin`).
 - Migrations geradas com `dotnet ef migrations add <Nome>` (comando no README). Nunca edite migration já aplicada; crie outra.
 - `DevelopmentDatabase` só roda em Development e é idempotente.
 
 ### Api
 
-- Rotas sob `/api/v1`. Superfície pública em `/store`, painel em `/admin`, cozinha em `/kitchen`, hubs SignalR em `/hubs/kitchen` e `/hubs/ops`.
+- Rotas sob `/api/v1`. Superfície pública em `/store`, painel em `/admin`, cozinha em `/kitchen`, agente de impressão em `/agent`, hubs SignalR em `/hubs/kitchen`, `/hubs/ops` e `/hubs/agent`.
+- O agente de impressão se autentica com token próprio (`AgentAuth`, `RequireAgentSession()`), nunca com o cookie do painel. Toda rota de `/agent` exige o cabeçalho `X-Brasa-Agent-Protocol`; mudança incompatível no protocolo sobe `AgentProtocol.Current` e mantém a versão anterior funcionando.
 - Os grupos `/admin` e `/kitchen` têm `CsrfHeaderFilter`; rotas autenticadas usam `RequireStaffSession()` (cookie `admin` + `AdminSessionFilter`, que relê o usuário no banco a cada requisição).
 - Rotas públicas que gravam têm limite de taxa (`RateLimits`). Criar pedido exige o cabeçalho `Idempotency-Key`.
 - Autorização por **permissão, nunca por papel**: `.RequirePermission(Permissions.CatalogWrite)`. Papéis viram permissões só em `Permissions.For(role)`.
@@ -75,6 +77,9 @@ tests/
 - Exemplos de chamada atualizados em `src/Brasa.Api/Brasa.Api.http`.
 
 ## Código
+
+- **Um tipo por arquivo, com o nome do arquivo igual ao do tipo** (`ProductErrors.cs`, `OrderSummary.cs`). Nada de arquivos que agrupam vários tipos, como `Contracts.cs` ou `Helpers.cs`.
+- Nomes dizem o que a coisa faz, sem abreviação: `QueuePrintForIssuedTicketHandler`, `MarkSilentAgentsOfflineJob`, `db.QueueRealtimeNotice(...)`. Handler termina em `Handler`, tarefa periódica em `Job`, reação a evento descreve o efeito.
 
 - `Directory.Build.props` liga `Nullable` e `TreatWarningsAsErrors`: o build não aceita aviso de compilação.
 - **Sem comentários no código novo.** Nomes claros substituem explicações. Exceção só se o usuário pedir.

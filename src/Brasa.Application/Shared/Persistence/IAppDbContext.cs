@@ -5,6 +5,7 @@ using Brasa.Domain.Catalog;
 using Brasa.Domain.Kitchen;
 using Brasa.Domain.Ordering;
 using Brasa.Domain.Payments;
+using Brasa.Domain.Printing;
 using Brasa.Domain.StoreSettings;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,6 +31,14 @@ public interface IAppDbContext
     DbSet<Payment> Payments { get; }
 
     DbSet<KitchenTicket> KitchenTickets { get; }
+
+    DbSet<PrintAgent> PrintAgents { get; }
+
+    DbSet<PairingCode> PairingCodes { get; }
+
+    DbSet<Printer> Printers { get; }
+
+    DbSet<PrintJob> PrintJobs { get; }
 
     DbSet<OutboxMessage> OutboxMessages { get; }
 

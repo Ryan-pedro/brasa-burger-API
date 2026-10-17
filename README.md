@@ -4,7 +4,7 @@ Sistema de pedidos para uma hamburgueria: loja virtual, painel administrativo, p
 
 Este repositório tem a **API (.NET 10)**, o banco local e a documentação de arquitetura. O front-end (loja e painel, em Angular) fica em [brasa-burger-front-end](https://github.com/Ryan-pedro/brasa-burger-front-end).
 
-> **Estágio atual:** fases 2 a 4 concluídas na API: cardápio completo, pedidos com pagamento presencial e cozinha em tempo real. Próximas: impressão (fase 5), produção e piloto (fase 6), Pix (fase 7).
+> **Estágio atual:** fases 2 a 5 concluídas na API: cardápio completo, pedidos com pagamento presencial, cozinha em tempo real e impressão automática (lado do servidor). Próximos: o programa do agente de impressão, produção e piloto (fase 6) e Pix (fase 7).
 > "Brasa Burger" é o nome da loja e o codinome do projeto. Os namespaces usam `Brasa`.
 
 ## Estrutura do repositório
@@ -125,7 +125,36 @@ Sob `/api/v1/kitchen`, com login de cozinha:
 
 Etapas do preparo: `Queued` → `InPreparation` → `Ready` → `Dispatched`. O pedido acompanha o preparo. O campo `from` impede que dois toques simultâneos avancem duas vezes (o segundo recebe 409).
 
-**Tempo real:** os hubs SignalR `/api/v1/hubs/kitchen` (cozinha) e `/api/v1/hubs/ops` (painel) enviam o evento `changed` com `{ type, id }` (`ticket.changed` ou `order.changed`). O aviso é só uma dica: o cliente busca os dados por HTTP, ao receber o aviso, ao reconectar e periodicamente.
+**Tempo real:** os hubs SignalR `/api/v1/hubs/kitchen` (cozinha) e `/api/v1/hubs/ops` (painel) enviam o evento `changed` com `{ type, id }` (`ticket.changed`, `order.changed` ou `printing.changed`). O aviso é só uma dica: o cliente busca os dados por HTTP, ao receber o aviso, ao reconectar e periodicamente.
+
+O quadro da cozinha também traz `printers` (situação de cada impressora e se o agente está online), e cada comanda traz `printStatus` (`Pending`, `Leased`, `Printed`, `Abandoned`, `Cancelled` ou nulo, sem impressora). A cozinha reimprime com `POST /tickets/{id}/reprint` (permissão `kitchen.tickets.reprint`).
+
+### Impressão
+
+Quando um pedido é confirmado, a API cria uma tarefa de impressão para a impressora padrão, com o layout da comanda (linhas com texto e estilo, sem comandos de impressora). Um **agente** instalado no computador da loja busca as tarefas e imprime. Sem impressora padrão ativa, nenhuma tarefa é criada e a tela da cozinha é o único canal.
+
+No painel, sob `/api/v1/admin/printing` (permissão `printing.manage`):
+
+| Rota | O que faz |
+|---|---|
+| `POST /pairing-codes` | Gera um código de uso único (10 minutos) para parear um agente. |
+| `GET /agents`, `POST /agents/{id}/revoke` | Lista os agentes com as impressoras; revoga um agente (cancela as tarefas abertas dele). |
+| `POST /agents/{agentId}/printers`, `PUT /printers/{id}` | Cadastra e edita impressoras: nome, `paperWidth` (`Mm58`, `Mm80`), `address` (ex.: `tcp://192.168.0.50:9100`), ativa e padrão. A primeira impressora vira a padrão. |
+| `POST /printers/{id}/test` | Imprime uma página de teste. |
+| `GET /jobs?status=&limit=&cursor=` | Histórico das tarefas. |
+| `POST /tickets/{ticketId}/reprint` | Reimprime a comanda, marcada como **2ª VIA**. |
+
+**Protocolo do agente**, sob `/api/v1/agent`. Toda chamada leva o cabeçalho `X-Brasa-Agent-Protocol: 1`; versão abaixo da mínima recebe 426 `agent_protocol_outdated`.
+
+1. `POST /pair` com `{ code, name, agentVersion }` devolve `{ agentId, secret }`. O segredo aparece uma única vez; a API guarda só o hash.
+2. `POST /token` com `{ agentId, secret }` devolve `{ accessToken, expiresAt }` (15 minutos). As demais chamadas usam `Authorization: Bearer <token>`.
+3. `POST /heartbeat` a cada 30 segundos, com `{ agentVersion, localQueueSize, lastError, printers: [{ printerId, status, message }] }`. A resposta é a configuração das impressoras do agente (também em `GET /config`). Sem sinal por 90 segundos, o agente aparece offline.
+4. `POST /jobs/lease` com `{ maxJobs }` reserva tarefas por 60 segundos e devolve `jobId`, `attemptId`, `printerId`, `reason`, `possibleDuplicate` e `document`.
+5. `POST /jobs/{jobId}/result` com `{ attemptId, outcome, error }`, onde `outcome` é `Printed`, `Failed` ou `Unknown` (o agente caiu durante a impressão). Repetir `Printed` não tem efeito.
+
+Falhas voltam para a fila com espera crescente (5 s, 15 s, 45 s, 2 min, 5 min); depois de 5 tentativas, ou 30 minutos no caso da impressão automática, a tarefa é abandonada e aparece como alerta. Uma reserva vencida volta para a fila. Pedido cancelado depois de impresso gera um aviso de cancelamento impresso.
+
+O hub `/api/v1/hubs/agent` (token em `access_token`) avisa o agente com `print.jobs_available` quando há tarefa nova. Como nas outras telas, o aviso só encurta a espera: o agente também pede tarefas periodicamente.
 
 ### Com o front-end
 

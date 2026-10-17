@@ -1,6 +1,7 @@
 using Brasa.Application.Catalog.Images;
 using Brasa.Application.Identity;
 using Brasa.Application.Ordering.Checkout;
+using Brasa.Application.Printing.Jobs;
 using Brasa.Application.Shared.Outbox;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Infrastructure.Identity;
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.AddSingleton<OutboxSignal>();
         services.AddScoped<IOutboxStore, OutboxStore>();
         services.AddScoped<IOrderNumbers, OrderNumbers>();
+        services.AddScoped<IPrintJobQueue, PrintJobQueue>();
         services.AddSingleton<IDatabaseErrors, DatabaseErrors>();
         services.TryAddSingleton(TimeProvider.System);
 

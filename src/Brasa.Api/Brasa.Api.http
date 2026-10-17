@@ -172,4 +172,78 @@ X-Brasa-Csrf: 1
   "from": "Queued"
 }
 
+### Painel: gerar código de pareamento de agente (exige dono ou gerente)
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/printing/pairing-codes
+X-Brasa-Csrf: 1
+
+### Agente: parear com o código gerado no painel
+POST {{Brasa.Api_HostAddress}}/api/v1/agent/pair
+Content-Type: application/json
+X-Brasa-Agent-Protocol: 1
+
+{
+  "code": "ABCD-EFGH",
+  "name": "Computador do caixa",
+  "agentVersion": "1.0.0"
+}
+
+### Agente: obter token (agentId e secret vêm do pareamento)
+POST {{Brasa.Api_HostAddress}}/api/v1/agent/token
+Content-Type: application/json
+X-Brasa-Agent-Protocol: 1
+
+{
+  "agentId": "00000000-0000-0000-0000-000000000000",
+  "secret": "troque-pelo-segredo"
+}
+
+### Painel: cadastrar impressora no agente (troque o id do agente)
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/printing/agents/00000000-0000-0000-0000-000000000000/printers
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "name": "Cozinha",
+  "paperWidth": "Mm80",
+  "address": "tcp://192.168.0.50:9100",
+  "isDefault": true
+}
+
+### Agente: sinal de vida (troque o token)
+POST {{Brasa.Api_HostAddress}}/api/v1/agent/heartbeat
+Content-Type: application/json
+X-Brasa-Agent-Protocol: 1
+Authorization: Bearer troque-pelo-token
+
+{
+  "agentVersion": "1.0.0",
+  "localQueueSize": 0,
+  "printers": []
+}
+
+### Agente: reservar tarefas
+POST {{Brasa.Api_HostAddress}}/api/v1/agent/jobs/lease
+Content-Type: application/json
+X-Brasa-Agent-Protocol: 1
+Authorization: Bearer troque-pelo-token
+
+{
+  "maxJobs": 5
+}
+
+### Agente: informar resultado (troque jobId e attemptId)
+POST {{Brasa.Api_HostAddress}}/api/v1/agent/jobs/00000000-0000-0000-0000-000000000000/result
+Content-Type: application/json
+X-Brasa-Agent-Protocol: 1
+Authorization: Bearer troque-pelo-token
+
+{
+  "attemptId": "00000000-0000-0000-0000-000000000000",
+  "outcome": "Printed"
+}
+
+### Painel: histórico de tarefas de impressão
+GET {{Brasa.Api_HostAddress}}/api/v1/admin/printing/jobs?limit=20
+Accept: application/json
+
 ###

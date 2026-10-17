@@ -19,6 +19,8 @@
 > - Ofertas combinatórias (Terça do Hambúrguer) continuam fora do MVP.
 >
 > Pendente da fase 4 no front-end: a aplicação Kitchen Display e a remoção da rota `/cozinha/comanda` do Storefront.
+>
+> A **fase 5** está implementada na API (agentes, pareamento, impressoras, tarefas, tentativas, reserva, reimpressão, recuperação de reservas e presença), com testes. Faltam o programa do agente (serviço Windows com fila local e ESC/POS), as telas de impressão no Admin e no Kitchen Display, e o teste com a impressora de referência (DP-02). Os parâmetros de reserva, tentativas e validade são constantes em `PrintJobPolicy`.
 
 Este documento ordena a implementação em fases, com critérios de aceite, riscos e o registro das decisões pendentes. Ele não contém estimativas de prazo: o tamanho de cada fase é relativo (P, M, G), porque a capacidade de quem vai implementar não é conhecida aqui.
 

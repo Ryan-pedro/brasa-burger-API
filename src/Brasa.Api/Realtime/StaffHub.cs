@@ -23,7 +23,3 @@ internal abstract class StaffHub(string permission, IUserAccounts accounts) : Hu
         await base.OnConnectedAsync();
     }
 }
-
-internal sealed class KitchenHub(IUserAccounts accounts) : StaffHub(Permissions.KitchenTicketsRead, accounts);
-
-internal sealed class OpsHub(IUserAccounts accounts) : StaffHub(Permissions.OrdersRead, accounts);

@@ -2,7 +2,7 @@ using Brasa.Application.Shared.Results;
 
 namespace Brasa.Application.Ordering.Checkout;
 
-public sealed class QuoteHandler(CartBuilder cart)
+public sealed class QuoteHandler(PricedCartBuilder cart)
 {
     public async Task<Result<QuoteResponse>> HandleAsync(QuoteRequest request, CancellationToken cancellationToken)
     {

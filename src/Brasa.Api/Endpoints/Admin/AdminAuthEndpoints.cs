@@ -66,6 +66,7 @@ public static class AdminAuthEndpoints
         secured.MapAdminCatalogEndpoints();
         secured.MapAdminStoreEndpoints();
         secured.MapAdminOrderEndpoints();
+        secured.MapAdminPrintingEndpoints();
 
         return api;
     }

@@ -4,22 +4,6 @@ using Brasa.Application.Shared.Persistence;
 
 namespace Brasa.Application.Identity.Login;
 
-public sealed record LoginRequest(string? Email, string? Password);
-
-public enum LoginFailure
-{
-    InvalidCredentials,
-    AccountLocked,
-    AccountDisabled,
-}
-
-public sealed record LoginResult(SessionResponse? Session, LoginFailure? Failure)
-{
-    public static LoginResult Succeeded(SessionResponse session) => new(session, null);
-
-    public static LoginResult Failed(LoginFailure failure) => new(null, failure);
-}
-
 public sealed class LoginHandler(IUserAccounts accounts, IAppDbContext db, AuditTrail audit)
 {
     public async Task<LoginResult> HandleAsync(LoginRequest request, CancellationToken cancellationToken)

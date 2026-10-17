@@ -1,8 +1,8 @@
 using Brasa.Application.Ordering.Management;
 using Brasa.Application.Ordering.Shared;
 using Brasa.Application.Shared.Audit;
-using Brasa.Application.Shared.Outbox;
 using Brasa.Application.Shared.Persistence;
+using Brasa.Application.Shared.Realtime;
 using Brasa.Application.Shared.Results;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +27,7 @@ public sealed class ReceivePaymentHandler(IAppDbContext db, AuditTrail audit, Ti
         var now = clock.GetUtcNow();
         payment.MarkPaid(now);
         audit.Record("payment.received", payment.Id, new { orderId });
-        db.Queue(RealtimeChannels.Ops, RealtimeTypes.OrderChanged, orderId, now);
+        db.QueueRealtimeNotice(RealtimeChannels.Ops, RealtimeNoticeTypes.OrderChanged, orderId, now);
         await db.SaveChangesAsync(cancellationToken);
 
         return await db.DetailAsync(order, cancellationToken);

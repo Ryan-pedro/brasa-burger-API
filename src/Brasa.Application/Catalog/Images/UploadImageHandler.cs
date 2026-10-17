@@ -2,8 +2,6 @@ using Brasa.Application.Shared.Results;
 
 namespace Brasa.Application.Catalog.Images;
 
-public sealed record ImageResponse(string Url);
-
 public sealed class UploadImageHandler(IImageStorage storage)
 {
     public const int MaxBytes = 2 * 1024 * 1024;

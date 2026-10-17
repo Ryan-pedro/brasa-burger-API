@@ -1,13 +1,5 @@
 namespace Brasa.Application.Shared.Results;
 
-public enum ErrorKind
-{
-    Validation,
-    NotFound,
-    Conflict,
-    Rule,
-}
-
 /// <summary>
 /// Falha esperada de um caso de uso. O <see cref="Code"/> é estável: o frontend decide por ele.
 /// </summary>

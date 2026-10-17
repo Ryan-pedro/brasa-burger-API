@@ -1,4 +1,4 @@
-using Brasa.Application.Shared.Outbox;
+using Brasa.Application.Shared.Realtime;
 using Brasa.Domain.Catalog;
 using Brasa.Domain.Identity;
 using Brasa.Domain.StoreSettings;
@@ -58,6 +58,7 @@ public sealed class StoreApiFactory : WebApplicationFactory<Brasa.Api.AssemblyRe
         builder.UseSetting("Jobs:Enabled", "false");
         builder.UseSetting("RateLimits:OrdersPerMinute", "100000");
         builder.UseSetting("RateLimits:QuotesPerMinute", "100000");
+        builder.UseSetting("RateLimits:AgentCredentialsPerMinute", "100000");
         builder.UseSetting("Storage:Images:Path", ImagesPath);
 
         builder.ConfigureTestServices(services =>

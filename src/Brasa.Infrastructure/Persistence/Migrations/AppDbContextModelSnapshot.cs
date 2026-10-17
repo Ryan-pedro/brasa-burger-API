@@ -570,6 +570,259 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                     b.ToTable("payments", "payments");
                 });
 
+            modelBuilder.Entity("Brasa.Domain.Printing.PairingCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pairing_codes");
+
+                    b.HasIndex("CodeHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pairing_codes_code_hash");
+
+                    b.ToTable("pairing_codes", "printing");
+                });
+
+            modelBuilder.Entity("Brasa.Domain.Printing.PrintAgent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AgentVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("agent_version");
+
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_online");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<int>("LocalQueueSize")
+                        .HasColumnType("integer")
+                        .HasColumnName("local_queue_size");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTimeOffset>("PairedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paired_at");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("secret_hash");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_agents");
+
+                    b.ToTable("agents", "printing");
+                });
+
+            modelBuilder.Entity("Brasa.Domain.Printing.PrintJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Document")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("document");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("LeasedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("leased_until");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<bool>("PossibleDuplicate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("possible_duplicate");
+
+                    b.Property<Guid>("PrinterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("printer_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_jobs");
+
+                    b.HasIndex("PrinterId")
+                        .HasDatabaseName("ix_jobs_printer_id");
+
+                    b.HasIndex("Status", "NextAttemptAt")
+                        .HasDatabaseName("ix_jobs_status_next_attempt_at");
+
+                    b.HasIndex("TicketId", "PrinterId", "Reason")
+                        .IsUnique()
+                        .HasDatabaseName("ix_jobs_ticket_id_printer_id_reason")
+                        .HasFilter("reason IN ('Automatic', 'CancellationNotice')");
+
+                    b.ToTable("jobs", "printing");
+                });
+
+            modelBuilder.Entity("Brasa.Domain.Printing.Printer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("address");
+
+                    b.Property<Guid>("AgentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("agent_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PaperWidth")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("paper_width");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StatusMessage")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("status_message");
+
+                    b.Property<DateTimeOffset?>("StatusReportedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("status_reported_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_printers");
+
+                    b.HasIndex("AgentId")
+                        .HasDatabaseName("ix_printers_agent_id");
+
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasDatabaseName("ix_printers_is_default")
+                        .HasFilter("is_default");
+
+                    b.ToTable("printers", "printing");
+                });
+
             modelBuilder.Entity("Brasa.Domain.StoreSettings.Store", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1169,6 +1422,83 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_payments_orders_order_id");
+                });
+
+            modelBuilder.Entity("Brasa.Domain.Printing.PrintJob", b =>
+                {
+                    b.HasOne("Brasa.Domain.Printing.Printer", null)
+                        .WithMany()
+                        .HasForeignKey("PrinterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_jobs_printers_printer_id");
+
+                    b.HasOne("Brasa.Domain.Kitchen.KitchenTicket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_jobs_tickets_ticket_id");
+
+                    b.OwnsMany("Brasa.Domain.Printing.PrintAttempt", "Attempts", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<Guid>("AgentId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("agent_id");
+
+                            b1.Property<string>("Error")
+                                .HasMaxLength(300)
+                                .HasColumnType("character varying(300)")
+                                .HasColumnName("error");
+
+                            b1.Property<DateTimeOffset?>("FinishedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("finished_at");
+
+                            b1.Property<int>("Number")
+                                .HasColumnType("integer")
+                                .HasColumnName("number");
+
+                            b1.Property<string>("Outcome")
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("outcome");
+
+                            b1.Property<Guid>("PrintJobId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("print_job_id");
+
+                            b1.Property<DateTimeOffset>("StartedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("started_at");
+
+                            b1.HasKey("Id")
+                                .HasName("pk_attempts");
+
+                            b1.HasIndex("PrintJobId")
+                                .HasDatabaseName("ix_attempts_print_job_id");
+
+                            b1.ToTable("attempts", "printing");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PrintJobId")
+                                .HasConstraintName("fk_attempts_jobs_print_job_id");
+                        });
+
+                    b.Navigation("Attempts");
+                });
+
+            modelBuilder.Entity("Brasa.Domain.Printing.Printer", b =>
+                {
+                    b.HasOne("Brasa.Domain.Printing.PrintAgent", null)
+                        .WithMany()
+                        .HasForeignKey("AgentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_printers_agents_agent_id");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>

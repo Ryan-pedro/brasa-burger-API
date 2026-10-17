@@ -38,6 +38,7 @@ public sealed class KitchenTicket : AggregateRoot
         UpdatedAt = now;
         _items.AddRange(items);
 
+        Raise(new TicketIssued(this));
         Raise(new TicketChanged(this));
     }
 
@@ -88,7 +89,13 @@ public sealed class KitchenTicket : AggregateRoot
         ChangePreparation(Preparation - 1, now);
     }
 
-    public void Void(DateTimeOffset now) => ChangeDocument(TicketDocumentStatus.Voided, now);
+    public void Void(DateTimeOffset now)
+    {
+        if (ChangeDocument(TicketDocumentStatus.Voided, now))
+        {
+            Raise(new TicketVoided(this));
+        }
+    }
 
     public void Close(DateTimeOffset now) => ChangeDocument(TicketDocumentStatus.Closed, now);
 
@@ -101,16 +108,17 @@ public sealed class KitchenTicket : AggregateRoot
         Raise(new TicketChanged(this));
     }
 
-    private void ChangeDocument(TicketDocumentStatus document, DateTimeOffset now)
+    private bool ChangeDocument(TicketDocumentStatus document, DateTimeOffset now)
     {
         if (Document != TicketDocumentStatus.Issued)
         {
-            return;
+            return false;
         }
 
         Document = document;
         UpdatedAt = now;
 
         Raise(new TicketChanged(this));
+        return true;
     }
 }

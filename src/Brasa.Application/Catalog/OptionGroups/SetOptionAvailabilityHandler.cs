@@ -1,7 +1,6 @@
 using Brasa.Application.Shared.Audit;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Application.Shared.Results;
-using Brasa.Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brasa.Application.Catalog.OptionGroups;

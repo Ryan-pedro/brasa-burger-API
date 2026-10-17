@@ -42,5 +42,3 @@ public sealed record OrderTrackingResponse(
             order.CreatedAt,
             order.UpdatedAt);
 }
-
-public sealed record TrackingItem(string Name, int Quantity, long TotalInCents, IReadOnlyList<string> Options, string? Notes);

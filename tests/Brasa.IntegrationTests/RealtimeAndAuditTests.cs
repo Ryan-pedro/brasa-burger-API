@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Brasa.Application.Shared.Outbox;
+using Brasa.Application.Shared.Realtime;
 using Brasa.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,8 +18,8 @@ public class RealtimeAndAuditTests(StoreApiFactory factory)
 
         await factory.RunJobAsync<DispatchOutboxJob>();
 
-        Assert.Contains(factory.Notifier.Sent, sent => sent.Channel == RealtimeChannels.Kitchen && sent.Notice.Type == RealtimeTypes.TicketChanged);
-        Assert.Contains(factory.Notifier.Sent, sent => sent.Channel == RealtimeChannels.Ops && sent.Notice.Type == RealtimeTypes.OrderChanged);
+        Assert.Contains(factory.Notifier.Sent, sent => sent.Channel == RealtimeChannels.Kitchen && sent.Notice.Type == RealtimeNoticeTypes.TicketChanged);
+        Assert.Contains(factory.Notifier.Sent, sent => sent.Channel == RealtimeChannels.Ops && sent.Notice.Type == RealtimeNoticeTypes.OrderChanged);
 
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

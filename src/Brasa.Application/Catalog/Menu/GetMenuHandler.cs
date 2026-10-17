@@ -6,27 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brasa.Application.Catalog.Menu;
 
-/// <summary>O cardápio público, numa resposta só: o Storefront monta todas as telas a partir dela.</summary>
-public sealed record MenuResponse(IReadOnlyList<MenuCategory> Categories);
-
-public sealed record MenuCategory(Guid Id, string Name, string Slug, Guid? ParentId, IReadOnlyList<MenuProduct> Products);
-
-public sealed record MenuProduct(
-    Guid Id,
-    string Name,
-    string Description,
-    long PriceInCents,
-    string? Size,
-    string? ImageUrl,
-    bool IsAvailable,
-    bool IsFeatured,
-    long? PromoPriceInCents,
-    IReadOnlyList<MenuOptionGroup> OptionGroups);
-
-public sealed record MenuOptionGroup(Guid Id, string Name, string Kind, int MinSelections, int MaxSelections, IReadOnlyList<MenuOption> Options);
-
-public sealed record MenuOption(Guid Id, string Name, long PriceDeltaInCents, bool IsAvailable);
-
 public sealed class GetMenuHandler(IAppDbContext db, TimeProvider clock)
 {
     public async Task<MenuResponse> HandleAsync(CancellationToken cancellationToken)

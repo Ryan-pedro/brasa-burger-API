@@ -6,12 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brasa.Application.Kitchen.Tickets;
 
-public enum PreparationMove
-{
-    Advance,
-    Undo,
-}
-
 public sealed class MovePreparationHandler(IAppDbContext db, TimeProvider clock)
 {
     public async Task<Result<TicketResponse>> HandleAsync(Guid id, PreparationMove move, PreparationMoveRequest request, CancellationToken cancellationToken)
@@ -47,6 +41,6 @@ public sealed class MovePreparationHandler(IAppDbContext db, TimeProvider clock)
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return TicketResponse.From(ticket);
+        return await db.ToResponseAsync(ticket, cancellationToken);
     }
 }

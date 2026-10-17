@@ -1,17 +1,22 @@
 using Brasa.Api.Auth;
 using Brasa.Api.Endpoints.Admin;
+using Brasa.Api.Endpoints.Agent;
 using Brasa.Api.Endpoints.Kitchen;
 using Brasa.Api.Endpoints.Store;
 using Brasa.Api.Http;
 using Brasa.Api.Jobs;
 using Brasa.Api.Realtime;
-using Brasa.Application;
 using Brasa.Application.Ordering.Management;
+using Brasa.Application.Printing.Agents;
+using Brasa.Application.Printing.Jobs;
 using Brasa.Application.Shared.Jobs;
 using Brasa.Application.Shared.Outbox;
-using Brasa.Infrastructure;
+using Brasa.Application.Shared.Realtime;
+using Brasa.Application;
 using Brasa.Infrastructure.Persistence;
 using Brasa.Infrastructure.Storage;
+using Brasa.Infrastructure;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -41,12 +46,17 @@ if (builder.Configuration.GetValue(JobRegistration.EnabledSetting, true))
     builder.Services.AddJob<DispatchOutboxJob>(provider => provider.GetRequiredService<OutboxSignal>());
     builder.Services.AddJob<RejectStaleOrdersJob>(TimeSpan.FromMinutes(1));
     builder.Services.AddJob<PurgeExpiredRecordsJob>(TimeSpan.FromHours(1));
+    builder.Services.AddJob<RecoverPrintJobsJob>(TimeSpan.FromSeconds(10));
+    builder.Services.AddJob<MarkSilentAgentsOfflineJob>(TimeSpan.FromSeconds(30));
 }
 
 // Sessão do painel: cookie inacessível ao JavaScript, preso ao host.
 builder.Services
     .AddAuthentication()
-    .AddCookie(AdminAuth.Scheme);
+    .AddCookie(AdminAuth.Scheme)
+    .AddScheme<AuthenticationSchemeOptions, AgentAuthenticationHandler>(AgentAuth.Scheme, configureOptions: null);
+
+builder.Services.AddSingleton<IAgentTokens, AgentTokens>();
 
 builder.Services
     .AddOptions<CookieAuthenticationOptions>(AdminAuth.Scheme)
@@ -80,6 +90,9 @@ builder.Services
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AdminAuth.Scheme, policy => policy
         .AddAuthenticationSchemes(AdminAuth.Scheme)
+        .RequireAuthenticatedUser())
+    .AddPolicy(AgentAuth.Scheme, policy => policy
+        .AddAuthenticationSchemes(AgentAuth.Scheme)
         .RequireAuthenticatedUser());
 
 var app = builder.Build();
@@ -121,6 +134,7 @@ api.MapGet("/health", () => TypedResults.Ok(new HealthResponse("ok", DateTimeOff
 api.MapStoreEndpoints();
 api.MapAdminEndpoints();
 api.MapKitchenEndpoints();
+api.MapAgentEndpoints();
 api.MapRealtimeHubs();
 
 app.Run();

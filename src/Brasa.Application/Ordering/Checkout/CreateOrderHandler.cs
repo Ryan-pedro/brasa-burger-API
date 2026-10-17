@@ -11,11 +11,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brasa.Application.Ordering.Checkout;
 
-public sealed record CreatedOrder(OrderTrackingResponse Order, bool Replayed);
-
 public sealed class CreateOrderHandler(
     IAppDbContext db,
-    CartBuilder cart,
+    PricedCartBuilder cart,
     IOrderNumbers numbers,
     IDatabaseErrors databaseErrors,
     TimeProvider clock)

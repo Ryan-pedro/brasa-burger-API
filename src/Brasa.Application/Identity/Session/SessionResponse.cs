@@ -9,5 +9,3 @@ public sealed record SessionResponse(SessionUser User, string Role, IReadOnlyLis
             user.Role.ToString(),
             Brasa.Application.Identity.Permissions.For(user.Role));
 }
-
-public sealed record SessionUser(Guid Id, string Email, string Name);

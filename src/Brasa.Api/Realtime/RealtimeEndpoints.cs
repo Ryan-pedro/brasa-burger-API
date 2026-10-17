@@ -6,6 +6,7 @@ internal static class RealtimeEndpoints
     {
         api.MapHub<KitchenHub>("/hubs/kitchen");
         api.MapHub<OpsHub>("/hubs/ops");
+        api.MapHub<AgentHub>("/hubs/agent");
         return api;
     }
 }

@@ -6,6 +6,7 @@ using Brasa.Domain.Catalog;
 using Brasa.Domain.Kitchen;
 using Brasa.Domain.Ordering;
 using Brasa.Domain.Payments;
+using Brasa.Domain.Printing;
 using Brasa.Domain.StoreSettings;
 using Brasa.Infrastructure.Identity;
 using Brasa.Infrastructure.Persistence.Configurations;
@@ -38,6 +39,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, DomainE
     public DbSet<Payment> Payments => Set<Payment>();
 
     public DbSet<KitchenTicket> KitchenTickets => Set<KitchenTicket>();
+
+    public DbSet<PrintAgent> PrintAgents => Set<PrintAgent>();
+
+    public DbSet<PairingCode> PairingCodes => Set<PairingCode>();
+
+    public DbSet<Printer> Printers => Set<Printer>();
+
+    public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
