@@ -50,10 +50,10 @@ public sealed class PrintAgent : AggregateRoot
     public static (PrintAgent Agent, string Secret) Pair(string name, string agentVersion, DateTimeOffset now)
     {
         var secret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        return (new PrintAgent(name, agentVersion, Printing.SecretHash.Of(secret), now), secret);
+        return (new PrintAgent(name, agentVersion, Shared.SecretHash.Of(secret), now), secret);
     }
 
-    public bool HasSecret(string secret) => !IsRevoked && Printing.SecretHash.Matches(secret, SecretHash);
+    public bool HasSecret(string secret) => !IsRevoked && Shared.SecretHash.Matches(secret, SecretHash);
 
     public void RecordHeartbeat(string agentVersion, int localQueueSize, string? lastError, DateTimeOffset now)
     {

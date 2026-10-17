@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Brasa.Domain.Shared;
 
 namespace Brasa.Domain.Printing;
 

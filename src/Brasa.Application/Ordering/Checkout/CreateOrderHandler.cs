@@ -1,12 +1,15 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Brasa.Application.Ordering.Shared;
+using Brasa.Application.Payments.Online;
 using Brasa.Application.Ordering.Tracking;
 using Brasa.Application.Shared;
 using Brasa.Application.Shared.Idempotency;
+using Brasa.Application.Shared.Observability;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Application.Shared.Results;
 using Brasa.Domain.Ordering;
+using Brasa.Domain.Payments;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brasa.Application.Ordering.Checkout;
@@ -16,6 +19,8 @@ public sealed class CreateOrderHandler(
     PricedCartBuilder cart,
     IOrderNumbers numbers,
     IDatabaseErrors databaseErrors,
+    IPixGateway pixGateway,
+    BrasaMetrics metrics,
     TimeProvider clock)
 {
     public async Task<Result<CreatedOrder>> HandleAsync(string? idempotencyKey, CreateOrderRequest request, CancellationToken cancellationToken)
@@ -61,6 +66,7 @@ public sealed class CreateOrderHandler(
             return concurrent;
         }
 
+        metrics.OrderCreated(order.Type.ToString(), order.PaymentMethod.ToString());
         return new CreatedOrder(OrderTrackingResponse.From(order), Replayed: false);
     }
 
@@ -78,6 +84,12 @@ public sealed class CreateOrderHandler(
         var details = CreateOrderRules.Validate(request, type, errors);
         if (details is null)
         {
+            return errors.ToError();
+        }
+
+        if (details.PaymentMethod == PaymentMethod.PixOnline && !PixOnlineAvailability.IsOfferedBy(store, pixGateway))
+        {
+            errors.Add("paymentMethod", "O Pix online não está disponível nesta loja.");
             return errors.ToError();
         }
 
@@ -114,11 +126,7 @@ public sealed class CreateOrderHandler(
             price,
             now);
 
-        if (!store.ManualAcceptance)
-        {
-            order.Confirm(now);
-        }
-
+        AutomaticAcceptance.ApplyTo(order, store, now);
         return order;
     }
 

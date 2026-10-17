@@ -23,7 +23,7 @@ public sealed class RejectStaleOrdersJob(IAppDbContext db, AuditTrail audit, Tim
         var deadline = now.AddMinutes(-store.AcceptanceTimeoutMinutes);
 
         var stale = await db.Orders
-            .Where(order => order.Status == OrderStatus.Placed && order.CreatedAt <= deadline)
+            .Where(order => order.Status == OrderStatus.Placed && order.UpdatedAt <= deadline)
             .ToListAsync(cancellationToken);
 
         foreach (var order in stale)

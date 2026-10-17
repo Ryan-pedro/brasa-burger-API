@@ -38,4 +38,6 @@ public sealed class OrderItem
     public string? Notes { get; private set; }
 
     public IReadOnlyList<OrderItemOption> Options => _options;
+
+    internal void ClearNotes() => Notes = null;
 }

@@ -6,6 +6,7 @@ using Brasa.Application.Catalog.OptionGroups;
 using Brasa.Application.Catalog.Products;
 using Brasa.Application.Identity.Login;
 using Brasa.Application.Identity.Session;
+using Brasa.Application.Identity.Team;
 using Brasa.Application.Kitchen.Board;
 using Brasa.Application.Kitchen.Tickets;
 using Brasa.Application.Ordering.Checkout;
@@ -13,14 +14,17 @@ using Brasa.Application.Ordering.Management;
 using Brasa.Application.Ordering.Reactions;
 using Brasa.Application.Ordering.Tracking;
 using Brasa.Application.Payments;
+using Brasa.Application.Payments.Online;
 using Brasa.Application.Printing;
 using Brasa.Application.Printing.Agents;
 using Brasa.Application.Printing.Jobs;
 using Brasa.Application.Printing.Printers;
+using Brasa.Application.Privacy;
 using Brasa.Application.Shared.Audit;
 using Brasa.Application.Shared.Auth;
 using Brasa.Application.Shared.Events;
 using Brasa.Application.Shared.Jobs;
+using Brasa.Application.Shared.Observability;
 using Brasa.Application.Shared.Outbox;
 using Brasa.Application.Shared.Realtime;
 using Brasa.Application.StoreSettings.GetStoreProfile;
@@ -38,6 +42,7 @@ public static class DependencyInjection
     {
         services.AddScoped<CurrentUser>();
         services.AddScoped<AuditTrail>();
+        services.AddSingleton<BrasaMetrics>();
 
         services.AddScoped<GetStoreProfileHandler>();
         services.AddScoped<GetStoreSettingsHandler>();
@@ -46,6 +51,14 @@ public static class DependencyInjection
 
         services.AddScoped<LoginHandler>();
         services.AddScoped<GetSessionHandler>();
+        services.AddScoped<GetTeamHandler>();
+        services.AddScoped<CreateInvitationHandler>();
+        services.AddScoped<RevokeInvitationHandler>();
+        services.AddScoped<GetInvitationHandler>();
+        services.AddScoped<AcceptInvitationHandler>();
+        services.AddScoped<ChangeMemberRoleHandler>();
+        services.AddScoped<SetMemberStatusHandler>();
+        services.AddScoped<InviteOwnerHandler>();
 
         services.AddScoped<GetMenuHandler>();
         services.AddScoped<ListCategoriesHandler>();
@@ -74,6 +87,13 @@ public static class DependencyInjection
         services.AddScoped<GetOrderHandler>();
         services.AddScoped<ChangeOrderStatusHandler>();
         services.AddScoped<ReceivePaymentHandler>();
+        services.AddScoped<GetPixPaymentHandler>();
+        services.AddScoped<ReceivePixWebhookHandler>();
+        services.AddScoped<PixPaymentSettlement>();
+        services.AddScoped<ProcessPaymentWebhookHandler>();
+        services.AddScoped<RecordPaymentWebhookFailureHandler>();
+        services.AddScoped<ReconcilePixPaymentHandler>();
+        services.AddSingleton<PaymentWebhookSignal>();
 
         services.AddScoped<GetBoardHandler>();
         services.AddScoped<GetTicketHandler>();
@@ -96,6 +116,9 @@ public static class DependencyInjection
         services.AddScoped<ReprintTicketHandler>();
         services.AddScoped<ListPrintJobsHandler>();
 
+        services.AddScoped<PersonalDataRemoval>();
+        services.AddScoped<RemoveCustomerPersonalDataHandler>();
+
         services.AddScoped<IDomainEventHandler<OrderPlaced>, CreatePaymentHandler>();
         services.AddScoped<IDomainEventHandler<OrderStatusChanged>, IssueTicketHandler>();
         services.AddScoped<IDomainEventHandler<PreparationChanged>, FollowPreparationHandler>();
@@ -115,6 +138,10 @@ public static class DependencyInjection
         services.AddScoped<PurgeExpiredRecordsJob>();
         services.AddScoped<RecoverPrintJobsJob>();
         services.AddScoped<MarkSilentAgentsOfflineJob>();
+        services.AddScoped<RemoveExpiredPersonalDataJob>();
+        services.AddScoped<ProcessPaymentWebhooksJob>();
+        services.AddScoped<ReconcilePixPaymentsJob>();
+        services.AddScoped<SampleOperationalMetricsJob>();
 
         return services;
     }

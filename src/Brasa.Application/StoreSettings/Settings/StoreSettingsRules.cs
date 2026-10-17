@@ -5,7 +5,7 @@ namespace Brasa.Application.StoreSettings.Settings;
 
 internal static class StoreSettingsRules
 {
-    public static void Validate(StoreSettingsRequest request, Store store, FieldErrors errors)
+    public static void Validate(StoreSettingsRequest request, Store store, bool pixGatewayConfigured, FieldErrors errors)
     {
         var name = request.Name?.Trim();
         if (request.Name is not null && (string.IsNullOrEmpty(name) || name.Length > Store.NameMaxLength))
@@ -34,6 +34,11 @@ internal static class StoreSettingsRules
         if (request.AcceptanceTimeoutMinutes is < 1 or > Store.MaxAcceptanceTimeoutMinutes)
         {
             errors.Add("acceptanceTimeoutMinutes", $"O prazo de aceite vai de 1 a {Store.MaxAcceptanceTimeoutMinutes} minutos.");
+        }
+
+        if (request.AcceptsOnlinePix is true && !pixGatewayConfigured)
+        {
+            errors.Add("acceptsOnlinePix", "O Pix online ainda não foi configurado no servidor.");
         }
     }
 }

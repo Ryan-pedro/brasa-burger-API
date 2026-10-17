@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Brasa.Application.Catalog.Categories;
 using Brasa.Application.Catalog.OptionGroups;
 using Brasa.Application.Catalog.Products;
+using Brasa.Application.Identity.Team;
 using Brasa.Application.Ordering.Checkout;
 using Brasa.Application.StoreSettings.Settings;
 
@@ -67,6 +68,10 @@ public static class TestData
         request.Headers.Add("Idempotency-Key", idempotencyKey);
         return request;
     }
+
+    public static async Task<CreatedInvitationResponse> InviteAsync(this HttpClient owner, string email, string role) =>
+        await (await owner.PostAsJsonAsync("/api/v1/admin/team/invitations", new { email, displayName = "Pessoa da equipe", role }))
+            .ReadAsync<CreatedInvitationResponse>();
 
     public static async Task<IAsyncDisposable> StoreSettingsAsync(this StoreApiFactory factory, object changes)
     {

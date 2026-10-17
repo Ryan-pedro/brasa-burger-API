@@ -246,4 +246,63 @@ Authorization: Bearer troque-pelo-token
 GET {{Brasa.Api_HostAddress}}/api/v1/admin/printing/jobs?limit=20
 Accept: application/json
 
+### Equipe: listar (como dono)
+GET {{Brasa.Api_HostAddress}}/api/v1/admin/team
+Accept: application/json
+
+### Equipe: convidar
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/team/invitations
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "email": "nova.cozinha@brasa.dev",
+  "displayName": "Nova cozinha",
+  "role": "Kitchen"
+}
+
+### Convite: ver (troque o token)
+GET {{Brasa.Api_HostAddress}}/api/v1/admin/invitations/troque-pelo-token
+Accept: application/json
+
+### Convite: aceitar e criar a senha
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/invitations/troque-pelo-token/accept
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "password": "senha-com-dez-caracteres"
+}
+
+### Privacidade: remover os dados de um titular
+POST {{Brasa.Api_HostAddress}}/api/v1/admin/privacy/personal-data-removals
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "phone": "(31) 99999-0000"
+}
+
+### Pix online: ligar na loja
+PUT {{Brasa.Api_HostAddress}}/api/v1/admin/store/settings
+Content-Type: application/json
+X-Brasa-Csrf: 1
+
+{
+  "acceptsOnlinePix": true
+}
+
+### Pix online: cobrança do pedido (troque o token de acompanhamento)
+GET {{Brasa.Api_HostAddress}}/api/v1/store/orders/troque-pelo-token/payment
+Accept: application/json
+
+### Pix online: simular o pagamento em desenvolvimento (troque o token de acompanhamento)
+POST {{Brasa.Api_HostAddress}}/api/v1/dev/pix/orders/troque-pelo-token/pay
+Content-Type: application/json
+
+{}
+
+### Saúde: prontidão (confere o banco)
+GET {{Brasa.Api_HostAddress}}/api/v1/health/ready
+
 ###

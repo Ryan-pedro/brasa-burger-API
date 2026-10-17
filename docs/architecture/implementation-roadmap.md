@@ -21,6 +21,8 @@
 > Pendente da fase 4 no front-end: a aplicação Kitchen Display e a remoção da rota `/cozinha/comanda` do Storefront.
 >
 > A **fase 5** está implementada na API (agentes, pareamento, impressoras, tarefas, tentativas, reserva, reimpressão, recuperação de reservas e presença), com testes. Faltam o programa do agente (serviço Windows com fila local e ESC/POS), as telas de impressão no Admin e no Kitchen Display, e o teste com a impressora de referência (DP-02). Os parâmetros de reserva, tentativas e validade são constantes em `PrintJobPolicy`.
+>
+> As **fases 6 e 7** estão implementadas na API, com testes (2026-10-14). Fase 6: equipe por convite com link (sem e-mail), mudança de papel e desativação; anonimização dos dados pessoais 12 meses depois do pedido e atendimento a pedidos de titulares; chaves de proteção de dados no banco; OpenTelemetry com exportação OTLP e métricas do negócio ([ADR-0020](../adr/0020-observabilidade-com-opentelemetry.md)); verificação de prontidão; Dockerfile, Compose de produção com Caddy, scripts de backup e restauração, pipeline no GitHub Actions, teste de carga e roteiros em [docs/operations](../operations/implantacao.md). Fase 7: Pix online opcional atrás de `IPixGateway`, com gateway falso, caixa de entrada de avisos, expiração, conferência periódica e alertas ([ADR-0019](../adr/0019-pix-online-opcional-atras-de-uma-porta.md)). Faltam: escolher o gateway (DP-03), a hospedagem (DP-04) e o destino da observabilidade (DP-12); validar a política de privacidade (DP-09); as telas no front-end; o programa do agente; e o piloto.
 
 Este documento ordena a implementação em fases, com critérios de aceite, riscos e o registro das decisões pendentes. Ele não contém estimativas de prazo: o tamanho de cada fase é relativo (P, M, G), porque a capacidade de quem vai implementar não é conhecida aqui.
 
@@ -401,6 +403,7 @@ Cada pendência tem a recomendação desta arquitetura e o critério para fechar
 - **Questão 3 — qual gateway?** A comparar na data da decisão.
 - **Critério:** Pix com webhook assinado; ambiente de teste; chave de idempotência; taxas; suporte ao modelo de recebimento escolhido; qualidade da documentação.
 - **Prazo:** questão 1 antes da fase 3; as demais antes da fase 7.
+- **Andamento (2026-10-14):** questão 1 respondida: Pix online **opcional**, ao lado do pagamento na entrega. A integração está pronta atrás de `IPixGateway`, com um gateway falso; as questões 2 e 3 continuam abertas ([ADR-0019](../adr/0019-pix-online-opcional-atras-de-uma-porta.md)).
 
 ### DP-04 — Provedor de hospedagem e região
 
@@ -439,6 +442,7 @@ Cada pendência tem a recomendação desta arquitetura e o critério para fechar
 
 - **Recomendação:** tratar a loja como controladora dos dados dos seus clientes e o SaaS como operador; definir prazos de anonimização; publicar termos e política de privacidade.
 - **Critério:** validação jurídica.
+- **Andamento (2026-10-14):** anonimização em 12 meses implementada, com procedimento para pedidos de titulares ([privacidade.md](../operations/privacidade.md)). Falta a validação jurídica e a publicação da política.
 - **Prazo:** antes da fase 6.
 
 ### DP-10 — Gerador de cliente a partir do OpenAPI
@@ -458,6 +462,7 @@ Cada pendência tem a recomendação desta arquitetura e o critério para fechar
 
 - **Recomendação:** serviço externo à máquina da aplicação, com suporte a OpenTelemetry.
 - **Critério:** custo no volume inicial; retenção; canais de alerta.
+- **Andamento (2026-10-14):** a API exporta por OTLP ([ADR-0020](../adr/0020-observabilidade-com-opentelemetry.md)); falta escolher o serviço.
 - **Prazo:** antes da fase 6.
 
 ### Parâmetros a calibrar

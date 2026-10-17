@@ -18,4 +18,6 @@ public sealed record Error(
     public static Error Conflict(string code, string message) => new(ErrorKind.Conflict, code, message);
 
     public static Error Rule(string code, string message) => new(ErrorKind.Rule, code, message);
+
+    public static Error Unavailable(string code, string message) => new(ErrorKind.Unavailable, code, message);
 }

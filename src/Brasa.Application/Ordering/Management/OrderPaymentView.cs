@@ -1,3 +1,3 @@
 namespace Brasa.Application.Ordering.Management;
 
-public sealed record OrderPaymentView(string Method, string? Status, long AmountInCents, long? ChangeForInCents, DateTimeOffset? PaidAt);
+public sealed record OrderPaymentView(string Method, string? Status, long AmountInCents, long? ChangeForInCents, DateTimeOffset? PaidAt, DateTimeOffset? ExpiresAt);

@@ -17,6 +17,7 @@ public static class Permissions
     public const string StoreSettings = "store.settings";
     public const string PrintingManage = "printing.manage";
     public const string TeamManage = "team.manage";
+    public const string PrivacyManage = "privacy.manage";
 
     public const string KitchenTicketsRead = "kitchen.tickets.read";
     public const string KitchenTicketsUpdate = "kitchen.tickets.update";
@@ -27,7 +28,7 @@ public static class Permissions
         OrdersRead, OrdersManage, CatalogRead, CatalogWrite, OffersWrite, StoreSettings, PrintingManage,
     ];
 
-    private static readonly string[] Owner = [.. Manager, TeamManage];
+    private static readonly string[] Owner = [.. Manager, TeamManage, PrivacyManage];
 
     private static readonly string[] Kitchen = [KitchenTicketsRead, KitchenTicketsUpdate, KitchenTicketsReprint];
 

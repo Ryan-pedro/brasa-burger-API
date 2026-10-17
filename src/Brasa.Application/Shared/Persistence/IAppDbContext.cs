@@ -2,6 +2,7 @@ using Brasa.Application.Shared.Audit;
 using Brasa.Application.Shared.Idempotency;
 using Brasa.Application.Shared.Outbox;
 using Brasa.Domain.Catalog;
+using Brasa.Domain.Identity;
 using Brasa.Domain.Kitchen;
 using Brasa.Domain.Ordering;
 using Brasa.Domain.Payments;
@@ -30,6 +31,8 @@ public interface IAppDbContext
 
     DbSet<Payment> Payments { get; }
 
+    DbSet<PaymentWebhookEvent> PaymentWebhookEvents { get; }
+
     DbSet<KitchenTicket> KitchenTickets { get; }
 
     DbSet<PrintAgent> PrintAgents { get; }
@@ -45,6 +48,8 @@ public interface IAppDbContext
     DbSet<AuditEntry> AuditEntries { get; }
 
     DbSet<IdempotencyRecord> IdempotencyRecords { get; }
+
+    DbSet<StaffInvitation> StaffInvitations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

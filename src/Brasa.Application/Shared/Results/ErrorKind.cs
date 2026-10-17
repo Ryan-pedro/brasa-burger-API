@@ -6,4 +6,5 @@ public enum ErrorKind
     NotFound,
     Conflict,
     Rule,
+    Unavailable,
 }

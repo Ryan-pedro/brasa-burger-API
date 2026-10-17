@@ -13,7 +13,8 @@ public sealed record StoreSettingsResponse(
     long DeliveryFeeInCents,
     long MinimumOrderInCents,
     bool ManualAcceptance,
-    int AcceptanceTimeoutMinutes)
+    int AcceptanceTimeoutMinutes,
+    bool AcceptsOnlinePix)
 {
     public static StoreSettingsResponse From(Store store) =>
         new(
@@ -26,5 +27,6 @@ public sealed record StoreSettingsResponse(
             Money.ToCents(store.DeliveryFee),
             Money.ToCents(store.MinimumOrder),
             store.ManualAcceptance,
-            store.AcceptanceTimeoutMinutes);
+            store.AcceptanceTimeoutMinutes,
+            store.AcceptsOnlinePix);
 }

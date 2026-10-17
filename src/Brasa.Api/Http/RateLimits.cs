@@ -8,6 +8,7 @@ internal static class RateLimits
     public const string Orders = "orders";
     public const string Quotes = "quotes";
     public const string AgentCredentials = "agent-credentials";
+    public const string Invitations = "invitations";
 
     public static IServiceCollection AddPublicRateLimits(this IServiceCollection services, IConfiguration configuration)
     {
@@ -18,6 +19,7 @@ internal static class RateLimits
             options.AddPolicy(Orders, http => PerClient(http, settings.OrdersPerMinute));
             options.AddPolicy(Quotes, http => PerClient(http, settings.QuotesPerMinute));
             options.AddPolicy(AgentCredentials, http => PerClient(http, settings.AgentCredentialsPerMinute));
+            options.AddPolicy(Invitations, http => PerClient(http, settings.InvitationsPerMinute));
             options.OnRejected = (context, _) =>
                 new ValueTask(ApiProblems
                     .Create(StatusCodes.Status429TooManyRequests, "Muitas tentativas. Aguarde um minuto.", "rate_limited")

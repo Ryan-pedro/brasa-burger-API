@@ -51,6 +51,8 @@ public static class AdminAuthEndpoints
             .WithName("AdminLogout")
             .AllowAnonymous();
 
+        admin.MapAdminInvitationEndpoints();
+
         // Daqui para baixo: sessão obrigatória, revalidada no banco a cada requisição.
         var secured = admin.MapGroup(string.Empty).RequireStaffSession();
 
@@ -67,6 +69,8 @@ public static class AdminAuthEndpoints
         secured.MapAdminStoreEndpoints();
         secured.MapAdminOrderEndpoints();
         secured.MapAdminPrintingEndpoints();
+        secured.MapAdminTeamEndpoints();
+        secured.MapAdminPrivacyEndpoints();
 
         return api;
     }

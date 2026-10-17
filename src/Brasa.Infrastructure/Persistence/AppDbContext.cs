@@ -3,6 +3,7 @@ using Brasa.Application.Shared.Idempotency;
 using Brasa.Application.Shared.Outbox;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Domain.Catalog;
+using Brasa.Domain.Identity;
 using Brasa.Domain.Kitchen;
 using Brasa.Domain.Ordering;
 using Brasa.Domain.Payments;
@@ -10,6 +11,7 @@ using Brasa.Domain.Printing;
 using Brasa.Domain.StoreSettings;
 using Brasa.Infrastructure.Identity;
 using Brasa.Infrastructure.Persistence.Configurations;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +24,7 @@ namespace Brasa.Infrastructure.Persistence;
 /// pessoa fica no próprio usuário (<see cref="AppUser.Role"/>).
 /// </remarks>
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options, DomainEventDispatcher dispatcher, OutboxSignal outboxSignal)
-    : IdentityUserContext<AppUser, Guid>(options), IAppDbContext
+    : IdentityUserContext<AppUser, Guid>(options), IAppDbContext, IDataProtectionKeyContext
 {
     public DbSet<Store> Stores => Set<Store>();
 
@@ -37,6 +39,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, DomainE
     public DbSet<Order> Orders => Set<Order>();
 
     public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<PaymentWebhookEvent> PaymentWebhookEvents => Set<PaymentWebhookEvent>();
 
     public DbSet<KitchenTicket> KitchenTickets => Set<KitchenTicket>();
 
@@ -53,6 +57,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, DomainE
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
+
+    public DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
+
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {

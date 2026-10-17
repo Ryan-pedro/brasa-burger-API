@@ -5,4 +5,5 @@ public enum PaymentMethod
     Cash,
     Card,
     Pix,
+    PixOnline,
 }

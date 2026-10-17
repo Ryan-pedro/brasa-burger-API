@@ -1,18 +1,27 @@
 using Brasa.Api.Auth;
 using Brasa.Api.Endpoints.Admin;
 using Brasa.Api.Endpoints.Agent;
+using Brasa.Api.Endpoints.Development;
 using Brasa.Api.Endpoints.Kitchen;
 using Brasa.Api.Endpoints.Store;
+using Brasa.Api.Endpoints.Webhooks;
+using Brasa.Api.Health;
 using Brasa.Api.Http;
 using Brasa.Api.Jobs;
+using Brasa.Api.Observability;
+using Brasa.Api.Operations;
 using Brasa.Api.Realtime;
 using Brasa.Application.Ordering.Management;
+using Brasa.Application.Payments.Online;
 using Brasa.Application.Printing.Agents;
 using Brasa.Application.Printing.Jobs;
+using Brasa.Application.Privacy;
 using Brasa.Application.Shared.Jobs;
+using Brasa.Application.Shared.Observability;
 using Brasa.Application.Shared.Outbox;
 using Brasa.Application.Shared.Realtime;
 using Brasa.Application;
+using Brasa.Infrastructure.Payments;
 using Brasa.Infrastructure.Persistence;
 using Brasa.Infrastructure.Storage;
 using Brasa.Infrastructure;
@@ -22,6 +31,8 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddObservability();
 
 builder.Services.AddOpenApi();
 
@@ -40,6 +51,8 @@ builder.Services.PostConfigure<ImageStorageOptions>(options =>
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IRealtimeNotifier, HubNotifier>();
 builder.Services.AddPublicRateLimits(builder.Configuration);
+builder.Services.AddTrustedReverseProxy(builder.Configuration);
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
 
 if (builder.Configuration.GetValue(JobRegistration.EnabledSetting, true))
 {
@@ -48,6 +61,10 @@ if (builder.Configuration.GetValue(JobRegistration.EnabledSetting, true))
     builder.Services.AddJob<PurgeExpiredRecordsJob>(TimeSpan.FromHours(1));
     builder.Services.AddJob<RecoverPrintJobsJob>(TimeSpan.FromSeconds(10));
     builder.Services.AddJob<MarkSilentAgentsOfflineJob>(TimeSpan.FromSeconds(30));
+    builder.Services.AddJob<RemoveExpiredPersonalDataJob>(TimeSpan.FromHours(6));
+    builder.Services.AddJob<ProcessPaymentWebhooksJob>(provider => provider.GetRequiredService<PaymentWebhookSignal>());
+    builder.Services.AddJob<ReconcilePixPaymentsJob>(TimeSpan.FromMinutes(1));
+    builder.Services.AddJob<SampleOperationalMetricsJob>(TimeSpan.FromSeconds(30));
 }
 
 // Sessão do painel: cookie inacessível ao JavaScript, preso ao host.
@@ -95,7 +112,19 @@ builder.Services.AddAuthorizationBuilder()
         .AddAuthenticationSchemes(AgentAuth.Scheme)
         .RequireAuthenticatedUser());
 
+var usesFakePixGateway = builder.Configuration[$"{PixGatewayOptions.Section}:Provider"] == PixGatewayOptions.FakeProvider;
+var isDevelopmentOrTesting = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
+if (usesFakePixGateway && !isDevelopmentOrTesting)
+{
+    throw new InvalidOperationException("O gateway falso de Pix só pode ser usado em desenvolvimento e testes.");
+}
+
 var app = builder.Build();
+
+if (await OperationCommands.TryRunAsync(app, args))
+{
+    return;
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -105,6 +134,7 @@ if (app.Environment.IsDevelopment())
     await DevelopmentDatabase.MigrateAndSeedAsync(app.Services);
 }
 
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
@@ -131,10 +161,18 @@ var api = app.MapGroup("/api/v1");
 api.MapGet("/health", () => TypedResults.Ok(new HealthResponse("ok", DateTimeOffset.UtcNow)))
     .WithName("GetHealth");
 
+api.MapHealthChecks("/health/ready").WithName("GetReadiness");
+
 api.MapStoreEndpoints();
 api.MapAdminEndpoints();
 api.MapKitchenEndpoints();
 api.MapAgentEndpoints();
+api.MapWebhookEndpoints();
+
+if (isDevelopmentOrTesting)
+{
+    api.MapDevelopmentEndpoints();
+}
 api.MapRealtimeHubs();
 
 app.Run();

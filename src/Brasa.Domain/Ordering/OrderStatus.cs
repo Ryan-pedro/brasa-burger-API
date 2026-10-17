@@ -2,6 +2,7 @@ namespace Brasa.Domain.Ordering;
 
 public enum OrderStatus
 {
+    AwaitingPayment,
     Placed,
     Confirmed,
     InPreparation,
@@ -10,4 +11,5 @@ public enum OrderStatus
     Completed,
     Cancelled,
     Rejected,
+    PaymentExpired,
 }

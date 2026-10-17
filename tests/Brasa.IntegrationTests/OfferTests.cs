@@ -65,7 +65,7 @@ public class OfferTests(StoreApiFactory factory)
                 kind = "OrderAmount",
                 minimumSubtotalInCents = 100000,
                 discountInCents = 100,
-                startsAt = DateTimeOffset.UtcNow.AddDays(10),
+                startsAt = factory.Clock.GetUtcNow().AddDays(10),
             }))
             .ReadAsync<OfferResponse>();
 

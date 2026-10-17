@@ -338,6 +338,75 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                     b.ToTable("products", "catalog");
                 });
 
+            modelBuilder.Entity("Brasa.Domain.Identity.StaffInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_invitations");
+
+                    b.HasIndex("Email")
+                        .HasDatabaseName("ix_invitations_email");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_invitations_token_hash");
+
+                    b.ToTable("invitations", "identity");
+                });
+
             modelBuilder.Entity("Brasa.Domain.Kitchen.KitchenTicket", b =>
                 {
                     b.Property<Guid>("Id")
@@ -459,6 +528,10 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("payment_method");
 
+                    b.Property<DateTimeOffset?>("PersonalDataRemovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("personal_data_removed_at");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -530,9 +603,18 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("amount");
 
+                    b.Property<string>("ChargeId")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("charge_id");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
 
                     b.Property<string>("Method")
                         .IsRequired()
@@ -547,6 +629,16 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("PaidAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("paid_at");
+
+                    b.Property<string>("PixCopyPaste")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("pix_copy_paste");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("provider");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -567,7 +659,70 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_payments_order_id");
 
+                    b.HasIndex("Method", "Status")
+                        .HasDatabaseName("ix_payments_method_status");
+
+                    b.HasIndex("Provider", "ChargeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payments_provider_charge_id")
+                        .HasFilter("charge_id IS NOT NULL");
+
                     b.ToTable("payments", "payments");
+                });
+
+            modelBuilder.Entity("Brasa.Domain.Payments.PaymentWebhookEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("ChargeId")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("charge_id");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("provider");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_webhook_events");
+
+                    b.HasIndex("ReceivedAt")
+                        .HasDatabaseName("ix_webhook_events_received_at")
+                        .HasFilter("processed_at IS NULL");
+
+                    b.HasIndex("Provider", "EventId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_webhook_events_provider_event_id");
+
+                    b.ToTable("webhook_events", "payments");
                 });
 
             modelBuilder.Entity("Brasa.Domain.Printing.PairingCode", b =>
@@ -841,6 +996,10 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("accepts_dine_in");
 
+                    b.Property<bool>("AcceptsOnlinePix")
+                        .HasColumnType("boolean")
+                        .HasColumnName("accepts_online_pix");
+
                     b.Property<bool>("AcceptsPickup")
                         .HasColumnType("boolean")
                         .HasColumnName("accepts_pickup");
@@ -976,6 +1135,29 @@ namespace Brasa.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("users", "identity");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FriendlyName")
+                        .HasColumnType("text")
+                        .HasColumnName("friendly_name");
+
+                    b.Property<string>("Xml")
+                        .HasColumnType("text")
+                        .HasColumnName("xml");
+
+                    b.HasKey("Id")
+                        .HasName("pk_data_protection_keys");
+
+                    b.ToTable("data_protection_keys", "shared");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>

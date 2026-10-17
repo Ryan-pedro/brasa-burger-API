@@ -9,4 +9,6 @@ internal sealed class RateLimitSettings
     public int QuotesPerMinute { get; set; } = 60;
 
     public int AgentCredentialsPerMinute { get; set; } = 10;
+
+    public int InvitationsPerMinute { get; set; } = 20;
 }

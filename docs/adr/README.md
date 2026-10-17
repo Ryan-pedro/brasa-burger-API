@@ -42,6 +42,8 @@ Os registros marcados como **Proposto** ainda não foram validados por quem vai 
 | [0016](0016-uma-unica-loja.md) | Uma única loja por instalação | Aceito |
 | [0017](0017-front-end-em-repositorio-proprio.md) | Front-end em repositório próprio | Aceito |
 | [0018](0018-imagens-em-disco-local.md) | Imagens do cardápio em disco local no MVP | Proposto |
+| [0019](0019-pix-online-opcional-atras-de-uma-porta.md) | Pix online opcional, atrás de uma porta para o gateway | Aceito |
+| [0020](0020-observabilidade-com-opentelemetry.md) | Observabilidade com OpenTelemetry e exportação OTLP | Aceito |
 
 ## Modelo
 

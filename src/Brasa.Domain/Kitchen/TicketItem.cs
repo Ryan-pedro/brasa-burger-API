@@ -25,4 +25,6 @@ public sealed class TicketItem
     public List<string> Modifiers { get; private set; } = [];
 
     public string? Notes { get; private set; }
+
+    internal void ClearNotes() => Notes = null;
 }

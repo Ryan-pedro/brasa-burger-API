@@ -22,7 +22,7 @@ public static class OrderActions
             .Select(Name)
             .ToList();
 
-        if (payment?.Status == PaymentStatus.Pending && order.Status is not (OrderStatus.Cancelled or OrderStatus.Rejected))
+        if (payment is { Status: PaymentStatus.Pending, IsOnline: false } && order.Status is not (OrderStatus.Cancelled or OrderStatus.Rejected))
         {
             actions.Add(ReceivePayment);
         }

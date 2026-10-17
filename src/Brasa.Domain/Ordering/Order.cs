@@ -10,6 +10,8 @@ public sealed class Order : AggregateRoot
     public const int ReasonMaxLength = 200;
     public const int MaxItems = 50;
     public const int TrackingTokenLength = 32;
+    public const string PaymentExpiredReason = "O Pix não foi pago no prazo.";
+    public const string PaymentMismatchReason = "O Pix foi pago com valor diferente do pedido. A loja vai entrar em contato.";
     public const string DefaultCurrency = "BRL";
 
     private readonly List<OrderItem> _items = [];
@@ -51,7 +53,7 @@ public sealed class Order : AggregateRoot
         Number = number;
         TrackingToken = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(TrackingTokenLength / 2));
         Type = type;
-        Status = OrderStatus.Placed;
+        Status = paymentMethod == PaymentMethod.PixOnline ? OrderStatus.AwaitingPayment : OrderStatus.Placed;
         Customer = customer;
         DeliveryAddress = address;
         Notes = FreeText.Clean(notes, NotesMaxLength, nameof(notes));
@@ -108,9 +110,19 @@ public sealed class Order : AggregateRoot
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    public DateTimeOffset? PersonalDataRemovedAt { get; private set; }
+
     public IReadOnlyList<OrderItem> Items => _items;
 
+    public bool IsFinished => OrderTransitions.IsFinal(Status);
+
     public bool CanMoveTo(OrderStatus target) => OrderTransitions.IsAllowed(Status, target);
+
+    public void ConfirmPayment(DateTimeOffset now) => MoveTo(OrderStatus.Placed, now, null);
+
+    public void ExpirePayment(DateTimeOffset now) => MoveTo(OrderStatus.PaymentExpired, now, PaymentExpiredReason);
+
+    public void RefusePaymentWithWrongAmount(DateTimeOffset now) => MoveTo(OrderStatus.PaymentExpired, now, PaymentMismatchReason);
 
     public void Confirm(DateTimeOffset now) => MoveTo(OrderStatus.Confirmed, now, null);
 
@@ -131,6 +143,29 @@ public sealed class Order : AggregateRoot
         }
 
         MoveTo(status, now, null);
+    }
+
+    public void RemovePersonalData(DateTimeOffset now)
+    {
+        if (!IsFinished)
+        {
+            throw new InvalidOperationException("Os dados pessoais só são removidos de pedidos encerrados.");
+        }
+
+        if (PersonalDataRemovedAt is not null)
+        {
+            return;
+        }
+
+        Customer = Customer.WithoutPersonalData();
+        DeliveryAddress = null;
+        Notes = null;
+        foreach (var item in _items)
+        {
+            item.ClearNotes();
+        }
+
+        PersonalDataRemovedAt = now;
     }
 
     private void MoveTo(OrderStatus target, DateTimeOffset now, string? reason)

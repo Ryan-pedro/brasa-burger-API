@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Brasa.Domain.Printing;
+namespace Brasa.Domain.Shared;
 
 public static class SecretHash
 {

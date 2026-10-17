@@ -23,6 +23,7 @@ internal static class ApiProblems
             ErrorKind.NotFound => StatusCodes.Status404NotFound,
             ErrorKind.Conflict => StatusCodes.Status409Conflict,
             ErrorKind.Rule => StatusCodes.Status422UnprocessableEntity,
+            ErrorKind.Unavailable => StatusCodes.Status503ServiceUnavailable,
             _ => StatusCodes.Status400BadRequest,
         };
 

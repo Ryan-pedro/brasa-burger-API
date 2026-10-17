@@ -30,6 +30,14 @@ public class PermissionsTests
     }
 
     [Fact]
+    public void Somente_o_proprietario_atende_pedidos_de_titular()
+    {
+        Assert.Contains(Permissions.PrivacyManage, Permissions.For(StaffRole.Owner));
+        Assert.DoesNotContain(Permissions.PrivacyManage, Permissions.For(StaffRole.Manager));
+        Assert.DoesNotContain(Permissions.PrivacyManage, Permissions.For(StaffRole.Kitchen));
+    }
+
+    [Fact]
     public void Proprietario_tem_tudo_do_gerente_e_mais_a_equipe()
     {
         var owner = Permissions.For(StaffRole.Owner);

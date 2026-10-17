@@ -4,7 +4,7 @@ Sistema de pedidos para uma hamburgueria: loja virtual, painel administrativo, p
 
 Este repositório tem a **API (.NET 10)**, o banco local e a documentação de arquitetura. O front-end (loja e painel, em Angular) fica em [brasa-burger-front-end](https://github.com/Ryan-pedro/brasa-burger-front-end).
 
-> **Estágio atual:** fases 2 a 5 concluídas na API: cardápio completo, pedidos com pagamento presencial, cozinha em tempo real e impressão automática (lado do servidor). Próximos: o programa do agente de impressão, produção e piloto (fase 6) e Pix (fase 7).
+> **Estágio atual:** fases 2 a 7 concluídas na API: cardápio, pedidos, cozinha em tempo real, impressão automática (lado do servidor), equipe por convite, privacidade (LGPD), preparo para produção e Pix online atrás de um gateway falso. Faltam: o programa do agente de impressão, a escolha do gateway de Pix real (DP-03), da hospedagem (DP-04) e do destino da observabilidade (DP-12), e o piloto.
 > "Brasa Burger" é o nome da loja e o codinome do projeto. Os namespaces usam `Brasa`.
 
 ## Estrutura do repositório
@@ -20,10 +20,17 @@ brasa-burger/
 │  ├─ Brasa.UnitTests/          # domínio e aplicação
 │  ├─ Brasa.ArchitectureTests/  # regras de dependência entre camadas
 │  └─ Brasa.IntegrationTests/   # API em memória contra PostgreSQL real
-├─ infra/compose/            # PostgreSQL local (Docker Compose)
+├─ infra/
+│  ├─ compose/               # PostgreSQL local e Compose de produção
+│  ├─ caddy/                 # proxy de borda: HTTPS, cabeçalhos e front-end
+│  ├─ backup/                # cópia e restauração do banco e das imagens
+│  └─ load/                  # teste de carga (k6)
+├─ .github/workflows/        # build, testes e imagem Docker
 ├─ docs/
 │  ├─ architecture/          # arquitetura do sistema (inclui a do front-end)
+│  ├─ operations/            # implantação, backup, monitoramento e privacidade
 │  └─ adr/                   # registros de decisão
+├─ Dockerfile                # imagem da API
 ├─ Brasa.slnx                # solução
 ├─ Directory.Build.props     # configurações comuns a todos os projetos
 └─ global.json               # versão do SDK do .NET
@@ -99,7 +106,7 @@ Superfície pública, sob `/api/v1/store`:
 | `POST /orders` | Cria o pedido. Exige `Idempotency-Key` e `expectedTotalInCents` da última cotação. |
 | `GET /orders/{trackingToken}` | Acompanhamento pelo cliente. O número do pedido não serve como chave. |
 
-- Tipos: `DineIn` (mesa), `Pickup` (balcão) e `Delivery`. Pagamento presencial: `Cash` (com troco opcional), `Card`, `Pix`.
+- Tipos: `DineIn` (mesa), `Pickup` (balcão) e `Delivery`. Pagamento presencial: `Cash` (com troco opcional), `Card`, `Pix`. Pagamento antecipado: `PixOnline` (veja [Pix online](#pix-online)).
 - Total diferente do esperado → 409 `cart_changed`, com a nova cotação em `quote`. Item indisponível → 409 `item_unavailable`, com os itens em `errors`. Loja fechada → 409 `store_closed`. Abaixo do mínimo → 422 `below_minimum_order`. Mesma chave com outro pedido → 422 `idempotency_key_reused`.
 - Repetir o mesmo checkout com a mesma chave devolve o mesmo pedido (200).
 - Com aceite automático (padrão), o pedido nasce confirmado e já vai para a cozinha. Com aceite manual, fica "recebido" até alguém aceitar; sem resposta no prazo configurado, é recusado sozinho.
@@ -156,6 +163,35 @@ Falhas voltam para a fila com espera crescente (5 s, 15 s, 45 s, 2 min, 5 min); 
 
 O hub `/api/v1/hubs/agent` (token em `access_token`) avisa o agente com `print.jobs_available` quando há tarefa nova. Como nas outras telas, o aviso só encurta a espera: o agente também pede tarefas periodicamente.
 
+### Equipe
+
+O dono convida pessoas por link, sem e-mail. Sob `/api/v1/admin/team` (permissão `team.manage`):
+
+| Rota | O que faz |
+|---|---|
+| `GET /` | Equipe e convites pendentes. |
+| `POST /invitations` com `{ email, displayName, role }` | Cria o convite (`Manager` ou `Kitchen`, válido por 3 dias) e devolve o `token` uma única vez. Um novo convite para o mesmo e-mail substitui o anterior. |
+| `POST /invitations/{id}/revoke` | Revoga o convite. |
+| `PUT /members/{id}/role` com `{ role }`, `PUT /members/{id}/status` com `{ isActive }` | Muda o papel ou desativa. Quem está desativado perde a sessão na requisição seguinte. Ninguém altera a própria conta nem a de um proprietário. |
+
+O painel monta o link `/convite/{token}`. A pessoa convidada usa, sem login, `GET /api/v1/admin/invitations/{token}` (dados do convite) e `POST /api/v1/admin/invitations/{token}/accept` com `{ password }`, que cria a conta e já abre a sessão. Convite usado, revogado ou vencido responde 404 `invitation_not_found`.
+
+### Privacidade (LGPD)
+
+- Pedidos encerrados há mais de **12 meses** perdem nome, telefone, endereço e observações (tarefa a cada 6 horas). Valores, itens e datas continuam para o histórico. As tarefas de impressão desses pedidos são apagadas.
+- Pedido de titular: `POST /api/v1/admin/privacy/personal-data-removals` com `{ phone }` e/ou `{ orderNumbers }` (permissão `privacy.manage`, só do dono). Remove os dados dos pedidos encerrados e devolve os números dos que ainda estão em andamento. Procedimento em [docs/operations/privacidade.md](docs/operations/privacidade.md).
+
+### Pix online
+
+Opcional, ao lado das formas de pagamento na entrega ou retirada. O dono liga em `PUT /api/v1/admin/store/settings` com `acceptsOnlinePix` (só funciona com um gateway configurado). O perfil público informa `acceptsOnlinePix`.
+
+1. O cliente cria o pedido com `paymentMethod: "PixOnline"`. O pedido nasce `AwaitingPayment` e não vai para a cozinha.
+2. `GET /api/v1/store/orders/{trackingToken}/payment` gera a cobrança na primeira chamada e devolve `status`, `amountInCents`, `pixCopyPaste` e `expiresAt` (15 minutos).
+3. O gateway avisa em `POST /api/v1/webhooks/pix`. Assinatura inválida: 401. O aviso entra numa caixa de entrada e é processado em segundo plano; aviso repetido não tem efeito. O estado real é sempre consultado no gateway.
+4. Pago: o pedido segue o fluxo normal (aceite automático ou manual). Não pago no prazo: `PaymentExpired`. Pago depois de expirar ou com valor diferente: o pagamento fica `PaidLate` ou `AmountMismatch`, gera alerta e o pedido não reabre.
+
+Uma conferência a cada minuto cobre avisos perdidos. O gateway real entra por `IPixGateway` (DP-03); hoje existe o gateway **falso**, que só funciona em desenvolvimento e testes (`Payments:Pix:Provider = Fake`). Para simular o pagamento em desenvolvimento: `POST /api/v1/dev/pix/orders/{trackingToken}/pay`, com `paidAmountInCents` e `deliverWebhook` opcionais.
+
 ### Com o front-end
 
 Deixe os dois repositórios lado a lado e suba a API por aqui:
@@ -166,13 +202,28 @@ Documents/
 └─ brasa-burger-front-end/  # loja (http://localhost:4200) e painel (http://localhost:4201)
 ```
 
+## Produção
+
+Roteiro completo em [docs/operations/implantacao.md](docs/operations/implantacao.md). Em resumo, com o `.env` preenchido:
+
+```bash
+docker compose --env-file infra/compose/.env -f infra/compose/compose.prod.yml run --rm api migrate
+docker compose --env-file infra/compose/.env -f infra/compose/compose.prod.yml run --rm api invite-owner dono@loja.com.br "Nome do dono"
+docker compose --env-file infra/compose/.env -f infra/compose/compose.prod.yml up -d --build
+```
+
+- `GET /api/v1/health` responde se a API está no ar; `GET /api/v1/health/ready` também confere o banco.
+- Logs, métricas e rastros saem por OpenTelemetry quando `OTEL_EXPORTER_OTLP_ENDPOINT` está definido. Métricas e alertas em [docs/operations/monitoramento.md](docs/operations/monitoramento.md).
+- As chaves de proteção de dados (cookies e tokens do agente) ficam no banco, então sobrevivem a novas implantações.
+- A API só confia nos cabeçalhos `X-Forwarded-*` vindos das redes em `ReverseProxy:TrustedNetworks`.
+
 ## Migrations
 
 ```powershell
 dotnet ef migrations add <Nome> --project src/Brasa.Infrastructure --startup-project src/Brasa.Api --output-dir Persistence/Migrations
 ```
 
-As migrations ficam em `src/Brasa.Infrastructure/Persistence/Migrations`. Fora de desenvolvimento, a aplicação não as aplica sozinha.
+As migrations ficam em `src/Brasa.Infrastructure/Persistence/Migrations`. Fora de desenvolvimento, a aplicação não as aplica sozinha: rode o comando `migrate` da imagem antes de subir a versão nova.
 
 ## Documentação
 
@@ -187,6 +238,7 @@ Comece por [docs/architecture/architecture-overview.md](docs/architecture/archit
 | [Pedidos e impressão](docs/architecture/order-and-printing-flow.md) | Fluxo do pedido até a comanda impressa |
 | [Segurança](docs/architecture/security.md) | Identidade, autorização e ameaças |
 | [Infraestrutura e CI/CD](docs/architecture/infrastructure-and-cicd.md) | Ambientes, hospedagem e pipelines |
+| [Operação](docs/operations/implantacao.md) | Implantação, backup, monitoramento e privacidade |
 | [Decisões (ADR)](docs/adr/README.md) | Registro das decisões de arquitetura |
 
 ## Decisões já tomadas

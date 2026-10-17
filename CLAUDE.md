@@ -47,14 +47,17 @@ tests/
 
 - Um handler por caso de uso (`XxxHandler`, método `HandleAsync`), registrado como `Scoped` em `AddApplication()`.
 - Acesso a dados por `IAppDbContext`. Leitura com `AsNoTracking()`.
-- Falha esperada volta como `Result<T>` com `Error` (`Validation` 400, `NotFound` 404, `Conflict` 409, `Rule` 422) e `code` estável em snake_case (`category_name_taken`, `cart_changed`, `below_minimum_order`). Dados extras para o front vão em `Error.Extensions` (ex.: `quote` no `cart_changed`). Exceção é para erro inesperado.
+- Falha esperada volta como `Result<T>` com `Error` (`Validation` 400, `NotFound` 404, `Conflict` 409, `Rule` 422, `Unavailable` 503) e `code` estável em snake_case (`category_name_taken`, `cart_changed`, `below_minimum_order`). Dados extras para o front vão em `Error.Extensions` (ex.: `quote` no `cart_changed`). Exceção é para erro inesperado.
 - Validação de entrada com `FieldErrors`, chaves no nome do campo do JSON (camelCase), mensagens em português. Valide antes de chamar o domínio.
 - Contratos (`XxxRequest`, `XxxResponse`) são `record`. Nos contratos, dinheiro trafega em centavos (`long PriceInCents`) e é convertido com `Money`.
 - Usuário corrente via `CurrentUser`, preenchido pelo servidor. Relógio sempre por `TimeProvider`, nunca `DateTime.Now`.
 - Reação entre módulos por evento de domínio (`AggregateRoot.Raise` + `IDomainEventHandler<T>`), despachado em `SaveChangesAsync`, na mesma transação (ADR-0007). Ex.: pedido confirmado → comanda; preparo → estado do pedido.
 - Efeito fora do banco (aviso SignalR) entra no outbox com `db.QueueRealtimeNotice(...)` e é entregue por `DispatchOutboxJob`. O aviso só leva tipo e id; o cliente reconsulta por HTTP (ADR-0008).
 - Ação relevante (preço, disponibilidade, login, cancelamento, configuração da loja) é registrada com `AuditTrail.Record`.
-- Tarefas periódicas implementam `IJob` e são registradas em `Program.cs` com `AddJob<T>`.
+- Tarefas periódicas implementam `IJob` e são registradas em `Program.cs` com `AddJob<T>`. Tarefa acordada por aviso usa um `JobSignal` (ex.: `PaymentWebhookSignal`). Tarefa que trata vários itens isola cada um num escopo próprio, para que a falha de um não derrube os outros.
+- Serviço externo (gateway de pagamento) entra por uma porta em Application (`IPixGateway`) com adaptador em Infrastructure. Aviso de pagamento: validar assinatura, gravar na caixa de entrada (`PaymentWebhookEvent`), processar em segundo plano e consultar o estado real no gateway.
+- Métrica do negócio vai em `BrasaMetrics` (medidor `Brasa`); medidor que precisa do banco é amostrado por `SampleOperationalMetricsJob`.
+- Campo novo com dado pessoal do cliente precisa entrar na anonimização (`Order.RemovePersonalData`, `KitchenTicket.RemovePersonalData`, `PersonalDataRemoval`).
 
 ### Infrastructure
 
@@ -67,10 +70,10 @@ tests/
 
 ### Api
 
-- Rotas sob `/api/v1`. Superfície pública em `/store`, painel em `/admin`, cozinha em `/kitchen`, agente de impressão em `/agent`, hubs SignalR em `/hubs/kitchen`, `/hubs/ops` e `/hubs/agent`.
+- Rotas sob `/api/v1`. Superfície pública em `/store`, painel em `/admin`, cozinha em `/kitchen`, agente de impressão em `/agent`, avisos de gateways em `/webhooks`, hubs SignalR em `/hubs/kitchen`, `/hubs/ops` e `/hubs/agent`. `/dev` só existe em Development e Testing (simulação do gateway falso).
 - O agente de impressão se autentica com token próprio (`AgentAuth`, `RequireAgentSession()`), nunca com o cookie do painel. Toda rota de `/agent` exige o cabeçalho `X-Brasa-Agent-Protocol`; mudança incompatível no protocolo sobe `AgentProtocol.Current` e mantém a versão anterior funcionando.
 - Os grupos `/admin` e `/kitchen` têm `CsrfHeaderFilter`; rotas autenticadas usam `RequireStaffSession()` (cookie `admin` + `AdminSessionFilter`, que relê o usuário no banco a cada requisição).
-- Rotas públicas que gravam têm limite de taxa (`RateLimits`). Criar pedido exige o cabeçalho `Idempotency-Key`.
+- Rotas públicas que gravam têm limite de taxa (`RateLimits`). Criar pedido exige o cabeçalho `Idempotency-Key`. O convite da equipe (`/admin/invitations/{token}`) é anônimo e tem limite próprio.
 - Autorização por **permissão, nunca por papel**: `.RequirePermission(Permissions.CatalogWrite)`. Papéis viram permissões só em `Permissions.For(role)`.
 - Erros sempre por `ApiProblems` (`Create`, `From`, `Match`), com `code` e, em validação, `errors` por campo. Não exponha mensagem de exceção.
 - Cookie de sessão HttpOnly, SameSite=Lax, `__Host-` fora de Development/Testing. Não enfraqueça essas regras.

@@ -1,0 +1,83 @@
+# Homologação e produção em uma máquina (ADR-0014).
+# Antes de subir: copie .env.example para .env, preencha os valores e gere os builds do front-end.
+#
+# Atualizar o banco:  docker compose -f infra/compose/compose.prod.yml run --rm api migrate
+# Subir:              docker compose -f infra/compose/compose.prod.yml up -d --build
+# Banco no contêiner: acrescente --profile banco-local aos comandos acima.
+
+name: brasa
+
+services:
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      STORE_DOMAIN: ${STORE_DOMAIN:?Defina STORE_DOMAIN no .env}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Defina ADMIN_DOMAIN no .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Defina ACME_EMAIL no .env}
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${STOREFRONT_DIST:?Defina STOREFRONT_DIST no .env}:/srv/storefront:ro
+      - ${ADMIN_DIST:?Defina ADMIN_DIST no .env}:/srv/admin:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - edge
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: brasa-api:${BRASA_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__Database: Host=${DB_HOST:?Defina DB_HOST no .env};Port=${DB_PORT:-5432};Database=${DB_NAME:-brasa};Username=${DB_USER:-brasa};Password=${DB_PASSWORD:?Defina DB_PASSWORD no .env};SSL Mode=${DB_SSL_MODE:-Prefer}
+      Store__Name: ${STORE_NAME:-}
+      Store__TimeZoneId: ${STORE_TIME_ZONE:-America/Sao_Paulo}
+      Admin__PublicUrl: https://${ADMIN_DOMAIN}
+      ReverseProxy__TrustedNetworks__0: 172.16.0.0/12
+      AllowedHosts: ${STORE_DOMAIN};${ADMIN_DOMAIN}
+      OTEL_SERVICE_NAME: brasa-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+    volumes:
+      - images:/data/images
+    networks:
+      - edge
+      - data
+
+  postgres:
+    image: postgres:17
+    profiles: ["banco-local"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-brasa}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      POSTGRES_DB: ${DB_NAME:-brasa}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-brasa} -d ${DB_NAME:-brasa}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  caddy-data:
+  caddy-config:
+  images:
+  postgres-data:
+
+networks:
+  edge:
+  data:

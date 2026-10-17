@@ -1,10 +1,11 @@
+using Brasa.Application.Payments.Online;
 using Brasa.Application.Shared;
 using Brasa.Application.Shared.Persistence;
 using Brasa.Application.StoreSettings.Shared;
 
 namespace Brasa.Application.StoreSettings.GetStoreProfile;
 
-public sealed class GetStoreProfileHandler(IAppDbContext db)
+public sealed class GetStoreProfileHandler(IAppDbContext db, IPixGateway pixGateway)
 {
     /// <returns>O perfil da loja, ou nulo se a loja ainda não foi configurada.</returns>
     public async Task<StoreProfileResponse?> HandleAsync(CancellationToken cancellationToken)
@@ -19,6 +20,7 @@ public sealed class GetStoreProfileHandler(IAppDbContext db)
                 store.IsOpen,
                 store.OrderTypes(),
                 Money.ToCents(store.DeliveryFee),
-                Money.ToCents(store.MinimumOrder));
+                Money.ToCents(store.MinimumOrder),
+                PixOnlineAvailability.IsOfferedBy(store, pixGateway));
     }
 }

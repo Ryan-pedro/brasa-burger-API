@@ -8,4 +8,5 @@ public sealed record StoreSettingsRequest(
     long? DeliveryFeeInCents,
     long? MinimumOrderInCents,
     bool? ManualAcceptance,
-    int? AcceptanceTimeoutMinutes);
+    int? AcceptanceTimeoutMinutes,
+    bool? AcceptsOnlinePix);

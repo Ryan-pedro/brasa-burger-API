@@ -1,3 +1,4 @@
+using Brasa.Application.Payments.Online;
 using Brasa.Application.Shared;
 using Brasa.Application.Shared.Audit;
 using Brasa.Application.Shared.Persistence;
@@ -6,7 +7,7 @@ using Brasa.Application.StoreSettings.Shared;
 
 namespace Brasa.Application.StoreSettings.Settings;
 
-public sealed class UpdateStoreSettingsHandler(IAppDbContext db, AuditTrail audit)
+public sealed class UpdateStoreSettingsHandler(IAppDbContext db, IPixGateway pixGateway, AuditTrail audit)
 {
     public async Task<Result<StoreSettingsResponse>> HandleAsync(StoreSettingsRequest request, CancellationToken cancellationToken)
     {
@@ -17,7 +18,7 @@ public sealed class UpdateStoreSettingsHandler(IAppDbContext db, AuditTrail audi
         }
 
         var errors = new FieldErrors();
-        StoreSettingsRules.Validate(request, store, errors);
+        StoreSettingsRules.Validate(request, store, pixGateway.IsConfigured, errors);
         if (errors.Any)
         {
             return errors.ToError();
@@ -46,6 +47,11 @@ public sealed class UpdateStoreSettingsHandler(IAppDbContext db, AuditTrail audi
         store.SetAcceptance(
             request.ManualAcceptance ?? store.ManualAcceptance,
             request.AcceptanceTimeoutMinutes ?? store.AcceptanceTimeoutMinutes);
+
+        if (request.AcceptsOnlinePix is { } acceptsOnlinePix)
+        {
+            store.SetOnlinePix(acceptsOnlinePix);
+        }
 
         audit.Record("store.settings_changed", store.Id, request);
         await db.SaveChangesAsync(cancellationToken);

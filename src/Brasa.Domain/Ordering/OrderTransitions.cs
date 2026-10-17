@@ -4,6 +4,7 @@ public static class OrderTransitions
 {
     private static readonly Dictionary<OrderStatus, OrderStatus[]> Allowed = new()
     {
+        [OrderStatus.AwaitingPayment] = [OrderStatus.Placed, OrderStatus.PaymentExpired],
         [OrderStatus.Placed] = [OrderStatus.Confirmed, OrderStatus.Rejected],
         [OrderStatus.Confirmed] = [OrderStatus.InPreparation, OrderStatus.Cancelled],
         [OrderStatus.InPreparation] = [OrderStatus.Ready, OrderStatus.Confirmed, OrderStatus.Cancelled],

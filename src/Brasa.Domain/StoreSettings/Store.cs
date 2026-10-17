@@ -60,6 +60,8 @@ public sealed class Store
 
     public int AcceptanceTimeoutMinutes { get; private set; }
 
+    public bool AcceptsOnlinePix { get; private set; }
+
     public void Rename(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -125,6 +127,8 @@ public sealed class Store
         ManualAcceptance = manual;
         AcceptanceTimeoutMinutes = timeoutMinutes;
     }
+
+    public void SetOnlinePix(bool accepts) => AcceptsOnlinePix = accepts;
 
     private static void RequireAmount(decimal amount, decimal max, string parameterName)
     {

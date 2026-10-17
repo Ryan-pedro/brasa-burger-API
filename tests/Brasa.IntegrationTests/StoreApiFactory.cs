@@ -25,6 +25,7 @@ public sealed class StoreApiFactory : WebApplicationFactory<Brasa.Api.AssemblyRe
 
     public const string StoreName = "Loja de Teste";
     public const string Password = "senha-de-teste-123";
+    public const string FakePixSecret = "segredo-do-pix-de-teste";
 
     public const string Owner = "dono@teste.dev";
     public const string Manager = "gerente@teste.dev";
@@ -60,6 +61,8 @@ public sealed class StoreApiFactory : WebApplicationFactory<Brasa.Api.AssemblyRe
         builder.UseSetting("RateLimits:QuotesPerMinute", "100000");
         builder.UseSetting("RateLimits:AgentCredentialsPerMinute", "100000");
         builder.UseSetting("Storage:Images:Path", ImagesPath);
+        builder.UseSetting("Payments:Pix:Provider", "Fake");
+        builder.UseSetting("Payments:Pix:FakeWebhookSecret", FakePixSecret);
 
         builder.ConfigureTestServices(services =>
         {

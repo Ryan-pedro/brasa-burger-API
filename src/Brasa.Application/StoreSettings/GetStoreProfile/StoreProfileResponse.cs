@@ -7,4 +7,5 @@ public sealed record StoreProfileResponse(
     bool IsOpen,
     IReadOnlyList<string> OrderTypes,
     long DeliveryFeeInCents,
-    long MinimumOrderInCents);
+    long MinimumOrderInCents,
+    bool AcceptsOnlinePix);

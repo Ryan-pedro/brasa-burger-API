@@ -99,6 +99,18 @@ public sealed class KitchenTicket : AggregateRoot
 
     public void Close(DateTimeOffset now) => ChangeDocument(TicketDocumentStatus.Closed, now);
 
+    public void RemovePersonalData(string customerLabel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(customerLabel);
+
+        CustomerLabel = customerLabel;
+        Notes = null;
+        foreach (var item in _items)
+        {
+            item.ClearNotes();
+        }
+    }
+
     private void ChangePreparation(PreparationStatus preparation, DateTimeOffset now)
     {
         Preparation = preparation;

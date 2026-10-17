@@ -35,6 +35,60 @@ public class OrderTests
     }
 
     [Fact]
+    public void Remover_dados_pessoais_so_vale_para_pedido_encerrado_e_mantem_os_valores()
+    {
+        var order = new Order(
+            1,
+            OrderType.Delivery,
+            new OrderCustomer("Ana", "31999990000", null),
+            new DeliveryAddress("Rua A", "10", "Casa 2", "Centro"),
+            "Interfone quebrado",
+            PaymentMethod.Card,
+            null,
+            [Line()],
+            new PriceBreakdown(29.9m, null, 6.9m),
+            Now);
+
+        Assert.Throws<InvalidOperationException>(() => order.RemovePersonalData(Now));
+
+        order.Confirm(Now);
+        order.Cancel("Cliente desistiu", Now);
+        order.RemovePersonalData(Now);
+
+        Assert.Equal(OrderCustomer.AnonymizedName, order.Customer.Name);
+        Assert.Null(order.Customer.Phone);
+        Assert.Null(order.DeliveryAddress);
+        Assert.Null(order.Notes);
+        Assert.Equal(36.8m, order.Total);
+        Assert.Equal(Now, order.PersonalDataRemovedAt);
+    }
+
+    [Fact]
+    public void Pedido_com_pix_online_aguarda_o_pagamento_antes_de_ir_para_a_loja()
+    {
+        var order = new Order(1, OrderType.Pickup, new OrderCustomer("Ana", null, null), null, null, PaymentMethod.PixOnline, null, [Line()], new PriceBreakdown(29.9m, null, 0m), Now);
+
+        Assert.Equal(OrderStatus.AwaitingPayment, order.Status);
+        Assert.False(order.CanMoveTo(OrderStatus.Confirmed));
+
+        order.ConfirmPayment(Now);
+
+        Assert.Equal(OrderStatus.Placed, order.Status);
+    }
+
+    [Fact]
+    public void Pedido_com_pix_nao_pago_expira_e_encerra()
+    {
+        var order = new Order(1, OrderType.Pickup, new OrderCustomer("Ana", null, null), null, null, PaymentMethod.PixOnline, null, [Line()], new PriceBreakdown(29.9m, null, 0m), Now);
+
+        order.ExpirePayment(Now);
+
+        Assert.Equal(OrderStatus.PaymentExpired, order.Status);
+        Assert.Equal(Order.PaymentExpiredReason, order.StatusReason);
+        Assert.True(order.IsFinished);
+    }
+
+    [Fact]
     public void Delivery_despachado_sai_para_entrega_antes_de_finalizar()
     {
         var order = new Order(
