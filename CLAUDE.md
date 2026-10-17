@@ -73,7 +73,7 @@ tests/
 - Rotas sob `/api/v1`. Superfície pública em `/store`, painel em `/admin`, cozinha em `/kitchen`, agente de impressão em `/agent`, avisos de gateways em `/webhooks`, hubs SignalR em `/hubs/kitchen`, `/hubs/ops` e `/hubs/agent`. `/dev` só existe em Development e Testing (simulação do gateway falso).
 - O agente de impressão se autentica com token próprio (`AgentAuth`, `RequireAgentSession()`), nunca com o cookie do painel. Toda rota de `/agent` exige o cabeçalho `X-Brasa-Agent-Protocol`; mudança incompatível no protocolo sobe `AgentProtocol.Current` e mantém a versão anterior funcionando.
 - Os grupos `/admin` e `/kitchen` têm `CsrfHeaderFilter`; rotas autenticadas usam `RequireStaffSession()` (cookie `admin` + `AdminSessionFilter`, que relê o usuário no banco a cada requisição).
-- Rotas públicas que gravam têm limite de taxa (`RateLimits`). Criar pedido exige o cabeçalho `Idempotency-Key`. O convite da equipe (`/admin/invitations/{token}`) é anônimo e tem limite próprio.
+- Toda rota passa pelo limite geral por endereço (`RateLimits.GlobalPerMinute`; saúde e hubs ficam de fora). Rotas públicas que gravam, login e consultas por token têm limite próprio (`RateLimits`); rota pública nova recebe um. Criar pedido exige o cabeçalho `Idempotency-Key`. O convite da equipe (`/admin/invitations/{token}`) é anônimo e tem limite próprio.
 - Autorização por **permissão, nunca por papel**: `.RequirePermission(Permissions.CatalogWrite)`. Papéis viram permissões só em `Permissions.For(role)`.
 - Erros sempre por `ApiProblems` (`Create`, `From`, `Match`), com `code` e, em validação, `errors` por campo. Não exponha mensagem de exceção.
 - Cookie de sessão HttpOnly, SameSite=Lax, `__Host-` fora de Development/Testing. Não enfraqueça essas regras.

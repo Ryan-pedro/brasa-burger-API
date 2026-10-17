@@ -215,7 +215,24 @@ docker compose --env-file infra/compose/.env -f infra/compose/compose.prod.yml u
 - `GET /api/v1/health` responde se a API está no ar; `GET /api/v1/health/ready` também confere o banco.
 - Logs, métricas e rastros saem por OpenTelemetry quando `OTEL_EXPORTER_OTLP_ENDPOINT` está definido. Métricas e alertas em [docs/operations/monitoramento.md](docs/operations/monitoramento.md).
 - As chaves de proteção de dados (cookies e tokens do agente) ficam no banco, então sobrevivem a novas implantações.
-- A API só confia nos cabeçalhos `X-Forwarded-*` vindos das redes em `ReverseProxy:TrustedNetworks`.
+- A API só confia nos cabeçalhos `X-Forwarded-*` vindos das redes em `ReverseProxy:TrustedNetworks`, então os limites de requisição contam o endereço real do cliente.
+
+### Limites de requisição
+
+Por endereço de origem, em janelas de um minuto. Acima do limite: 429 `rate_limited`, com o cabeçalho `Retry-After`. Os valores ficam em `RateLimits` (configuração ou variável de ambiente, ex.: `RateLimits__LoginPerMinute`).
+
+| Alvo | Configuração | Padrão |
+|---|---|---|
+| Toda a API, menos saúde e hubs de tempo real | `GlobalPerMinute` | 600 |
+| Criar pedido | `OrdersPerMinute` | 10 |
+| Cotação | `QuotesPerMinute` | 60 |
+| Acompanhamento e pagamento pelo token | `OrderLookupsPerMinute` | 60 |
+| Login do painel | `LoginPerMinute` | 10 |
+| Pareamento e token do agente | `AgentCredentialsPerMinute` | 10 |
+| Convite da equipe | `InvitationsPerMinute` | 20 |
+| Avisos de pagamento (webhooks) | `WebhooksPerMinute` | 300 |
+
+O limite geral é alto de propósito: o painel, a cozinha e o agente da loja costumam sair pelo mesmo endereço. Os contadores ficam na memória da API; com mais de uma instância, cada uma conta separado.
 
 ## Migrations
 

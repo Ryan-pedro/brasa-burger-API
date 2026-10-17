@@ -52,10 +52,12 @@ public static class StoreEndpoints
 
         store.MapGet("/orders/{token}", async (string token, GetOrderTrackingHandler handler, CancellationToken cancellationToken) =>
                 (await handler.HandleAsync(token, cancellationToken)).Match(value => Results.Ok(value)))
+            .RequireRateLimiting(RateLimits.OrderLookups)
             .WithName("TrackOrder");
 
         store.MapGet("/orders/{token}/payment", async (string token, GetPixPaymentHandler handler, CancellationToken cancellationToken) =>
                 (await handler.HandleAsync(token, cancellationToken)).Match(value => Results.Ok(value)))
+            .RequireRateLimiting(RateLimits.OrderLookups)
             .WithName("GetPixPayment");
 
         return api;

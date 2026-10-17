@@ -60,6 +60,11 @@ public sealed class StoreApiFactory : WebApplicationFactory<Brasa.Api.AssemblyRe
         builder.UseSetting("RateLimits:OrdersPerMinute", "100000");
         builder.UseSetting("RateLimits:QuotesPerMinute", "100000");
         builder.UseSetting("RateLimits:AgentCredentialsPerMinute", "100000");
+        builder.UseSetting("RateLimits:GlobalPerMinute", "100000");
+        builder.UseSetting("RateLimits:OrderLookupsPerMinute", "100000");
+        builder.UseSetting("RateLimits:LoginPerMinute", "100000");
+        builder.UseSetting("RateLimits:InvitationsPerMinute", "100000");
+        builder.UseSetting("RateLimits:WebhooksPerMinute", "100000");
         builder.UseSetting("Storage:Images:Path", ImagesPath);
         builder.UseSetting("Payments:Pix:Provider", "Fake");
         builder.UseSetting("Payments:Pix:FakeWebhookSecret", FakePixSecret);

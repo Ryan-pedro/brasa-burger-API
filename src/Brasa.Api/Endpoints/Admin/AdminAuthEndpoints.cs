@@ -1,4 +1,5 @@
 using Brasa.Api.Auth;
+using Brasa.Api.Http;
 using Brasa.Api.Problems;
 using Brasa.Application.Identity.Login;
 using Brasa.Application.Identity.Session;
@@ -41,6 +42,7 @@ public static class AdminAuthEndpoints
                 return Results.Ok(result.Session);
             })
             .WithName("AdminLogin")
+            .RequireRateLimiting(RateLimits.Login)
             .AllowAnonymous();
 
         admin.MapPost("/auth/logout", async (HttpContext http) =>

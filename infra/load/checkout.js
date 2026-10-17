@@ -1,7 +1,7 @@
 // Teste de carga do checkout com k6 (https://k6.io). Rode contra a homologação, nunca contra a produção:
 //   k6 run -e BASE_URL=https://pedidos.homologacao.exemplo.com.br infra/load/checkout.js
 // Perfil: pico de sexta à noite, 30 clientes simultâneos montando e enviando pedidos por 5 minutos.
-// O k6 sai de um único endereço: durante o teste, suba RateLimits__OrdersPerMinute e RateLimits__QuotesPerMinute na homologação.
+// O k6 sai de um único endereço: durante o teste, suba RateLimits__GlobalPerMinute, RateLimits__OrdersPerMinute e RateLimits__QuotesPerMinute na homologação.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 

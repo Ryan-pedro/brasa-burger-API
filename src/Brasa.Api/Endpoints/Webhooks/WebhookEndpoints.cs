@@ -1,4 +1,5 @@
 using System.Text;
+using Brasa.Api.Http;
 using Brasa.Api.Problems;
 using Brasa.Application.Payments.Online;
 
@@ -10,7 +11,7 @@ public static class WebhookEndpoints
 
     public static IEndpointRouteBuilder MapWebhookEndpoints(this IEndpointRouteBuilder api)
     {
-        var webhooks = api.MapGroup("/webhooks").AllowAnonymous();
+        var webhooks = api.MapGroup("/webhooks").AllowAnonymous().RequireRateLimiting(RateLimits.Webhooks);
 
         webhooks.MapPost("/pix", async (HttpRequest request, ReceivePixWebhookHandler handler, CancellationToken cancellationToken) =>
             {
